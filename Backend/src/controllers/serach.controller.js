@@ -34,13 +34,16 @@ function extractFilters(prompt = "") {
 // Search jobs using a prompt.
 export async function searchJobs(req, res) {
   try {
-    const { prompt } = req.body || {};
+    const bodyPrompt = req.body?.prompt;
+    const queryPrompt = req.query?.prompt;
+    const prompt = typeof bodyPrompt === "string" ? bodyPrompt : queryPrompt;
 
-    if (!prompt || typeof prompt !== "string") {
-      return res.status(400).json({ error: "prompt is required" });
-    }
+    const finalPrompt =
+      typeof prompt === "string" && prompt.trim().length > 0
+        ? prompt
+        : "MERN fresher India";
 
-    const filters = extractFilters(prompt);
+    const filters = extractFilters(finalPrompt);
     const query = {};
 
     // Convert filters into a MongoDB query.
@@ -48,20 +51,32 @@ export async function searchJobs(req, res) {
     if (filters.experienceLevel) query.experienceLevel = filters.experienceLevel;
     if (filters.location) query.location = new RegExp(filters.location, "i");
 
-    // Fetch matching jobs.
-    const results = await jobModel.find(query).sort({ postedDate: -1 }).limit(50);
+    // Fetch matching jobs with company info.
+    const results = await jobModel
+      .find(query)
+      .populate("companyId", "name careerPage website")
+      .sort({ postedDate: -1 })
+      .limit(50)
+      .lean();
+
+    const enrichedResults = results.map((job) => ({
+      ...job,
+      companyName: job.companyId?.name || "Company",
+      companyCareerPage: job.companyId?.careerPage || "",
+      companyWebsite: job.companyId?.website || ""
+    }));
 
     // Save the search for analytics.
     await searchLogModel.create({
-      prompt,
+      prompt: finalPrompt,
       filters
     });
 
     return res.json({
-      prompt,
+      prompt: finalPrompt,
       filters,
-      count: results.length,
-      results
+      count: enrichedResults.length,
+      results: enrichedResults
     });
   } catch (error) {
     return res.status(500).json({ error: "Search failed" });

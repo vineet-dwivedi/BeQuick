@@ -114,6 +114,30 @@ This file explains the backend code in simple language.
 
 ---
 
+## Frontend and Backend Connection
+
+**Vite proxy**
+- File: `client/vite.config.js`
+- `/api` requests are proxied to `http://localhost:4000`.
+- This avoids CORS issues during development.
+
+**Frontend fetch**
+- File: `client/src/App.jsx`
+- `fetchSearchResults()` sends:
+  `POST /api/search` with `{ prompt }`
+- Response is used to render job cards.
+  
+**Alternate search (browser test)**
+- `GET /api/search?prompt=...` also works now.
+- Helpful when testing in the address bar.
+ - If `prompt` is missing, a default prompt is used.
+
+**Loading + error**
+- UI shows `Searching...` on submit.
+- If backend fails, an error message is shown.
+
+---
+
 ## Validators (Why and How)
 
 **Why we use validation**
