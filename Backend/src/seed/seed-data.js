@@ -120,26 +120,6 @@ export const sources = [
     tags: ["smartrecruiters", "tech"],
     active: true,
     createdAt: new Date()
-  },
-  {
-    name: "Microsoft",
-    website: "https://www.microsoft.com",
-    careerPage: "https://careers.microsoft.com/v2/global/en/locations/india.html",
-    sourceType: "company",
-    region: "India",
-    tags: ["mnc", "tech"],
-    active: true,
-    createdAt: new Date()
-  },
-  {
-    name: "Google",
-    website: "https://www.google.com",
-    careerPage: "https://www.google.com/about/careers/applications/jobs/results",
-    sourceType: "company",
-    region: "Global",
-    tags: ["mnc", "tech"],
-    active: true,
-    createdAt: new Date()
   }
 ];
 

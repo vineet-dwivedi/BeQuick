@@ -104,7 +104,17 @@ body[data-theme="alt"] {
   .topbar__actions {
     display: flex;
     gap: 12px;
+    align-items: center;
   }
+}
+
+.user-pill {
+  background: var(--chip);
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .ghost,
@@ -437,6 +447,10 @@ body[data-theme="alt"] {
     &.report {
       width: min(640px, 100%);
     }
+
+    &.auth {
+      width: min(480px, 100%);
+    }
   }
 
   &__header {
@@ -531,6 +545,36 @@ body[data-theme="alt"] {
       border-radius: 999px;
       font-weight: 600;
     }
+  }
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-input {
+  border: 1px solid var(--border);
+  border-radius: $radius-md;
+  padding: 12px 14px;
+  font-size: 1rem;
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+.auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.auth-dev-code {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+
+  strong {
+    color: var(--text-primary);
   }
 }
 

@@ -1,11 +1,26 @@
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import userModel from "../models/user.model.js";
+import { isSmtpConfigured, sendOtpEmail } from "../services/email.service.js";
+import {
+  clearOtp,
+  getOtp,
+  hasOtpCooldown,
+  getOtpCooldownTtl,
+  saveOtp,
+  setOtpCooldown,
+  updateOtp
+} from "../services/otp.service.js";
 
 // Simple auth controller: register, login, logout, and me.
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 const SALT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 10);
+const OTP_TTL_SECONDS = Number(process.env.OTP_TTL_SECONDS || 600);
+const OTP_COOLDOWN_SECONDS = Number(process.env.OTP_COOLDOWN_SECONDS || 60);
+const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5);
+const OTP_DEV_MODE = String(process.env.OTP_DEV_MODE || "false").toLowerCase() === "true";
 
 function signToken(user) {
   // Create a JWT token for the user.
@@ -47,6 +62,104 @@ export async function register(req, res) {
   // Send token + safe user data.
   const token = signToken(created);
   return res.status(201).json({ user: toPublicUser(created), token });
+}
+
+export async function requestOtp(req, res) {
+  const { email } = req.body || {};
+  const normalizedEmail = String(email || "").toLowerCase();
+
+  try {
+    if (await hasOtpCooldown(normalizedEmail)) {
+      const retryAfter = await getOtpCooldownTtl(normalizedEmail);
+      return res.json({
+        message: "OTP already sent. Please wait before requesting another code.",
+        cooldown: true,
+        retryAfter
+      });
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const payload = {
+      code,
+      attempts: 0,
+      expiresAt: Date.now() + OTP_TTL_SECONDS * 1000
+    };
+
+    await saveOtp(normalizedEmail, payload, OTP_TTL_SECONDS);
+    await setOtpCooldown(normalizedEmail, OTP_COOLDOWN_SECONDS);
+
+    if (!isSmtpConfigured() || OTP_DEV_MODE) {
+      console.log(`OTP dev code for ${normalizedEmail}: ${code}`);
+      return res.json({
+        message: "OTP generated (dev mode).",
+        devCode: code
+      });
+    }
+
+    try {
+      await sendOtpEmail({ email: normalizedEmail, code });
+    } catch (error) {
+      console.error("OTP email failed:", error?.message || error);
+      await clearOtp(normalizedEmail);
+      return res.status(500).json({ error: "Failed to send OTP email. Check SMTP settings." });
+    }
+
+    return res.json({ message: "OTP sent" });
+  } catch (error) {
+    return res.status(500).json({ error: "OTP service unavailable." });
+  }
+}
+
+export async function verifyOtp(req, res) {
+  const { email, code } = req.body || {};
+  const normalizedEmail = String(email || "").toLowerCase();
+  const submittedCode = String(code || "").trim();
+
+  try {
+    const payload = await getOtp(normalizedEmail);
+    if (!payload) {
+      return res.status(400).json({ error: "OTP expired or not found." });
+    }
+
+    if (payload.expiresAt && payload.expiresAt < Date.now()) {
+      await clearOtp(normalizedEmail);
+      return res.status(400).json({ error: "OTP expired or not found." });
+    }
+
+    if (payload.code !== submittedCode) {
+      const attempts = (payload.attempts || 0) + 1;
+      if (attempts >= OTP_MAX_ATTEMPTS) {
+        await clearOtp(normalizedEmail);
+        return res.status(400).json({ error: "Invalid code. Please request a new OTP." });
+      }
+
+      const remainingSeconds = Math.max(
+        1,
+        Math.ceil((payload.expiresAt - Date.now()) / 1000)
+      );
+      await updateOtp(normalizedEmail, { ...payload, attempts }, remainingSeconds);
+      return res.status(400).json({ error: "Invalid code." });
+    }
+
+    await clearOtp(normalizedEmail);
+
+    let user = await userModel.findOne({ email: normalizedEmail });
+    if (!user) {
+      const fallbackUser = normalizedEmail.split("@")[0] || "user";
+      const randomPassword = crypto.randomBytes(24).toString("hex");
+      const passwordHash = await bcrypt.hash(randomPassword, SALT_ROUNDS);
+      user = await userModel.create({
+        user: fallbackUser,
+        email: normalizedEmail,
+        passwordHash
+      });
+    }
+
+    const token = signToken(user);
+    return res.json({ user: toPublicUser(user), token });
+  } catch (error) {
+    return res.status(500).json({ error: "OTP service unavailable." });
+  }
 }
 
 // Login and return a token.

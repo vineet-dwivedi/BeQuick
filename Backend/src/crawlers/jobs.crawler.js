@@ -1,4 +1,3 @@
-import { load } from "cheerio";
 import { crawlJobsFromPage } from "./jsonld.crawler.js";
 
 function normalizeEmploymentType(value) {
@@ -62,17 +61,6 @@ function detectAts(url) {
       return { type: "workday", host, tenant, site };
     }
 
-    if (host.includes("careers.microsoft.com") || host.includes("apply.careers.microsoft.com")) {
-      return { type: "microsoft" };
-    }
-
-    if (host.includes("google.com") && parsed.pathname.includes("/about/careers/applications/jobs/results")) {
-      return { type: "google" };
-    }
-
-    if (host.includes("careers.google.com") && parsed.pathname.includes("/jobs/results")) {
-      return { type: "google" };
-    }
   } catch {
     // Ignore invalid URLs.
   }
@@ -171,114 +159,6 @@ async function crawlWorkday(workday) {
   }));
 }
 
-function normalizeExperienceLabel(label = "") {
-  const value = label.toLowerCase();
-  if (!value) return "";
-  if (value.includes("intern")) return "intern";
-  if (value.includes("early") || value.includes("entry") || value.includes("junior")) return "entry";
-  if (value.includes("mid")) return "mid";
-  if (value.includes("advanced") || value.includes("senior") || value.includes("lead") || value.includes("staff")) {
-    return "senior";
-  }
-  return "";
-}
-
-async function crawlGoogleCareers(url) {
-  const response = await fetch(url);
-  if (!response.ok) return [];
-  const html = await response.text();
-  const $ = load(html);
-  const baseHref = $("base").attr("href") || "https://www.google.com/about/careers/applications/";
-
-  const jobs = [];
-
-  $("li.lLd3Je").each((_, element) => {
-    const title = $(element).find("h3.QJPWVe").first().text().trim();
-    if (!title) return;
-
-    const locationParts = $(element)
-      .find("span.pwO9Dc span.r0wTof")
-      .map((__, node) => $(node).text().trim())
-      .get()
-      .filter(Boolean);
-    const location = locationParts.join("; ");
-
-    const experienceLabel = $(element).find("span.wVSTAb").first().text().trim();
-    const experienceLevel = normalizeExperienceLabel(experienceLabel);
-
-    const detailHref = $(element).find("a.WpHeLc[href]").attr("href") || "";
-    let jobUrl = url;
-    try {
-      if (detailHref) {
-        jobUrl = new URL(detailHref, baseHref).toString();
-      }
-    } catch {
-      jobUrl = url;
-    }
-
-    const description = stripHtml($(element).find(".Xsxa1e").text());
-
-    jobs.push({
-      title,
-      description,
-      location,
-      employmentType: "full-time",
-      experienceLevel,
-      remoteType: normalizeRemoteType(location),
-      postedDate: null,
-      jobUrl
-    });
-  });
-
-  return jobs;
-}
-
-async function crawlMicrosoftCareers(url) {
-  const response = await fetch(url);
-  if (!response.ok) return [];
-  const html = await response.text();
-  const $ = load(html);
-  const jobs = [];
-
-  const cards = $(".careers-joblistResponsive-column, .careers-joblistResponsive-columnTwo");
-
-  cards.each((_, element) => {
-    const title = $(element).find(".careers-joblistResponsive-subheading").first().text().trim();
-    if (!title) return;
-
-    const location = $(element)
-      .find(".careers-joblistResponsive-primarylocation")
-      .first()
-      .text()
-      .trim();
-    const worksite = $(element)
-      .find(".careers-joblistResponsive-worksiteflex")
-      .first()
-      .text()
-      .trim();
-    const postedRaw = $(element)
-      .find(".careers-joblistResponsive-postdate")
-      .first()
-      .text()
-      .trim();
-    const jobUrl =
-      $(element).find("a.careers-joblistResponsive-button[href]").attr("href") || url;
-    const descriptionHtml = $(element).find(".careers-joblistResponsive-desc").first().html() || "";
-
-    jobs.push({
-      title,
-      description: stripHtml(descriptionHtml),
-      location,
-      employmentType: "full-time",
-      remoteType: normalizeRemoteType(worksite || location),
-      postedDate: postedRaw ? new Date(postedRaw) : null,
-      jobUrl
-    });
-  });
-
-  return jobs;
-}
-
 async function discoverAtsUrlFromPage(url) {
   try {
     const response = await fetch(url);
@@ -308,16 +188,6 @@ export async function crawlJobsFromSource(url, visited = new Set()) {
   if (visited.has(url)) return [];
   visited.add(url);
   const ats = detectAts(url);
-
-  if (ats?.type === "google") {
-    const jobs = await crawlGoogleCareers(url);
-    if (jobs.length) return jobs;
-  }
-
-  if (ats?.type === "microsoft") {
-    const jobs = await crawlMicrosoftCareers(url);
-    if (jobs.length) return jobs;
-  }
 
   if (ats?.type === "greenhouse") {
     const jobs = await crawlGreenhouse(ats.company);

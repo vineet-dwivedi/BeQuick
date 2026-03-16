@@ -17,6 +17,17 @@ function App() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showReport, setShowReport] = useState(false);
   const [toast, setToast] = useState("");
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authCode, setAuthCode] = useState("");
+  const [authStep, setAuthStep] = useState("email");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [authUser, setAuthUser] = useState(null);
+  const [authDevCode, setAuthDevCode] = useState("");
+  const [authToken, setAuthToken] = useState(
+    () => window.localStorage.getItem("auth_token") || ""
+  );
 
   const dummySignals = useMemo(
     () => [
@@ -89,6 +100,32 @@ function App() {
     }
   };
 
+  const persistToken = (token) => {
+    if (token) {
+      window.localStorage.setItem("auth_token", token);
+    } else {
+      window.localStorage.removeItem("auth_token");
+    }
+    setAuthToken(token);
+  };
+
+  const fetchMe = async (token) => {
+    if (!token) return;
+    try {
+      const response = await fetch("/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setAuthUser(data.user);
+      } else {
+        persistToken("");
+      }
+    } catch {
+      persistToken("");
+    }
+  };
+
   useEffect(() => {
     document.body.setAttribute("data-theme", theme);
   }, [theme]);
@@ -114,6 +151,12 @@ function App() {
 
   useEffect(() => {
     fetchStats();
+  }, []);
+
+  useEffect(() => {
+    if (authToken) {
+      fetchMe(authToken);
+    }
   }, []);
 
   const formatTimestamp = (value) => {
@@ -202,6 +245,106 @@ function App() {
     setTheme((prev) => (prev === "default" ? "alt" : "default"));
   };
 
+  const openAuthModal = () => {
+    setAuthError("");
+    setAuthCode("");
+    setAuthDevCode("");
+    setAuthStep("email");
+    setAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setAuthModalOpen(false);
+    setAuthError("");
+    setAuthCode("");
+    setAuthDevCode("");
+  };
+
+  const requestOtp = async () => {
+    if (!authEmail.trim()) {
+      setAuthError("Please enter a valid email.");
+      return;
+    }
+
+    try {
+      setAuthLoading(true);
+      setAuthError("");
+      const response = await fetch("/api/auth/request-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: authEmail.trim() })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to send OTP");
+      }
+      setAuthStep("code");
+      if (data?.devCode) {
+        setAuthDevCode(data.devCode);
+      } else {
+        setAuthDevCode("");
+      }
+      if (data?.cooldown) {
+        showToastMessage("OTP already sent. Check your inbox.");
+      } else {
+        showToastMessage("OTP sent to your email.");
+      }
+    } catch (err) {
+      setAuthError(err.message || "Failed to send OTP");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const verifyOtp = async () => {
+    if (!authCode.trim()) {
+      setAuthError("Enter the code sent to your email.");
+      return;
+    }
+
+    try {
+      setAuthLoading(true);
+      setAuthError("");
+      const response = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: authEmail.trim(),
+          code: authCode.replace(/\s+/g, "")
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || "OTP verification failed");
+      }
+      persistToken(data.token);
+      setAuthUser(data.user);
+      closeAuthModal();
+      showToastMessage("Logged in successfully.");
+    } catch (err) {
+      setAuthError(err.message || "OTP verification failed");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      if (authToken) {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${authToken}` }
+        });
+      }
+    } catch {
+      // Ignore logout errors.
+    } finally {
+      persistToken("");
+      setAuthUser(null);
+      showToastMessage("Logged out.");
+    }
+  };
+
   const openJob = (job) => {
     setSelectedJob(job);
   };
@@ -220,9 +363,19 @@ function App() {
           <a href="#insights">Insights</a>
         </nav>
         <div className="topbar__actions">
+          {authUser && <span className="user-pill">{authUser.email}</span>}
           <button className="ghost" type="button" onClick={handleThemeToggle}>
             {theme === "default" ? "Switch to Pulse" : "Switch to Focus"}
           </button>
+          {authUser ? (
+            <button className="ghost" type="button" onClick={handleLogout}>
+              Logout
+            </button>
+          ) : (
+            <button className="ghost" type="button" onClick={openAuthModal}>
+              Login
+            </button>
+          )}
           <button
             className="primary"
             type="button"
@@ -580,6 +733,86 @@ function App() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {authModalOpen && (
+        <div className="modal">
+          <div className="modal__card auth">
+            <div className="modal__header">
+              <div>
+                <h3>{authStep === "email" ? "Login with email" : "Enter OTP code"}</h3>
+                <p>
+                  {authStep === "email"
+                    ? "We will send a one-time code to your inbox."
+                    : `Code sent to ${authEmail}`}
+                </p>
+              </div>
+              <button type="button" onClick={closeAuthModal}>
+                Close
+              </button>
+            </div>
+
+            {authStep === "email" ? (
+              <form
+                className="auth-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  requestOtp();
+                }}
+              >
+                <input
+                  className="auth-input"
+                  type="email"
+                  value={authEmail}
+                  onChange={(event) => setAuthEmail(event.target.value)}
+                  placeholder="you@example.com"
+                  required
+                />
+                {authError && <p className="error-text">{authError}</p>}
+                <div className="auth-actions">
+                  <button type="submit" className="primary" disabled={authLoading}>
+                    {authLoading ? "Sending..." : "Send OTP"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form
+                className="auth-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  verifyOtp();
+                }}
+              >
+                <input
+                  className="auth-input"
+                  type="text"
+                  value={authCode}
+                  onChange={(event) => setAuthCode(event.target.value)}
+                  placeholder="Enter 6-digit code"
+                  required
+                />
+                {authError && <p className="error-text">{authError}</p>}
+                {authDevCode && (
+                  <p className="auth-dev-code">
+                    Dev OTP: <strong>{authDevCode}</strong>
+                  </p>
+                )}
+                <div className="auth-actions">
+                  <button type="submit" className="primary" disabled={authLoading}>
+                    {authLoading ? "Verifying..." : "Verify & Login"}
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={() => setAuthStep("email")}
+                  >
+                    Change email
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
