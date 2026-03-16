@@ -33,17 +33,24 @@ This file explains the backend code in simple language.
 **Jobs Controller**
 - `getJobs` returns job list with filters.
 - `getJobById` returns one job.
+- Supports `page`, `limit`, and `q` (keyword search in title/description).
 
 **Search Controller**
 - `searchJobs` reads a prompt, extracts basic filters, and returns jobs.
 - It also saves the search into `searchLogs`.
-- If the user explicitly provides a location, the API does not relax it.
+- Use `includeRemote=true` to include remote jobs when a location is provided.
+- Use `page` and `limit` for pagination.
+- If the prompt includes a company name (example: "Amazon"), it filters by that company.
+- If nothing matches, it falls back to `PRIORITY_COMPANIES` (from `.env`) and shows jobs from those companies.
+- Priority company openings are injected on the first page of results and sorted to the top.
+- If the prompt includes "all jobs" / "every job", it returns all jobs without extra filters.
 
 **Routes**
 - Auth routes are in `Backend/src/routes/auth.routes.js`.
 - Company routes are in `Backend/src/routes/companies.routes.js`.
 - Job routes are in `Backend/src/routes/jobs.routes.js`.
 - Search route is in `Backend/src/routes/search.routes.js`.
+- Stats route is in `Backend/src/routes/stats.routes.js`.
 
 **Middleware**
 - `auth.middleware.js` checks JWT and protects routes.
@@ -115,6 +122,8 @@ This file explains the backend code in simple language.
   Inserts many documents at once.
 - `seed:sources`  
   Upserts sources by `careerPage` so you can run it safely multiple times.
+- `cleanup:empty`
+  Removes companies (and sources) that have 0 jobs.
 
 ---
 
@@ -175,6 +184,7 @@ This file explains the backend code in simple language.
 - File: `Backend/src/crawlers/jobs.crawler.js`
 - Supports Greenhouse, Lever, and SmartRecruiters APIs.
 - Uses ATS APIs first, then falls back to JSON‑LD.
+- Also supports Workday job boards and tries to discover ATS links on career pages.
 
 **Experience Level Detection**
 - Worker now tries to infer experience from text (e.g. "3 years" → mid).
@@ -219,6 +229,17 @@ This file explains the backend code in simple language.
 **Worker update**
 - If the queue job has no `companyId`, the worker creates a company on the fly.
 - After crawl, it updates `lastCrawledAt` on the source.
+
+---
+
+## Stats Endpoint
+
+**What it returns**
+- `companies`, `jobs`, `sources`
+- `lastJobScrapedAt`, `lastSourceCrawledAt`
+
+**Route**
+- `GET /api/stats`
 
 **Loading + error**
 - UI shows `Searching...` on submit.

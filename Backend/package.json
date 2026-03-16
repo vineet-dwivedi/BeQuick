@@ -8,6 +8,7 @@
     "dev": "npx nodemon src/server.js",
     "seed": "node src/seed/seed.js",
     "seed:sources": "node src/seed/seed-sources.js",
+    "cleanup:empty": "node src/seed/cleanup-empty-companies.js",
     "worker": "node src/worker/crawl.worker.js",
     "schedule": "node src/scheduler/crawl.scheduler.js",
     "schedule:once": "node src/scheduler/crawl.scheduler.js --once"

@@ -4,19 +4,33 @@ import jobModel from "../models/job.model.js";
 export async function getJobs(req, res) {
   try {
     const filters = {};
+    const query = req.validatedQuery || req.query;
 
-    if (req.query.stack) filters.stack = req.query.stack;
-    if (req.query.location) filters.location = new RegExp(req.query.location, "i");
-    if (req.query.experienceLevel) filters.experienceLevel = req.query.experienceLevel;
-    if (req.query.companyId) filters.companyId = req.query.companyId;
-    if (req.query.remoteType) filters.remoteType = req.query.remoteType;
+    if (query.stack) filters.stack = query.stack;
+    if (query.location) filters.location = new RegExp(query.location, "i");
+    if (query.experienceLevel) filters.experienceLevel = query.experienceLevel;
+    if (query.companyId) filters.companyId = query.companyId;
+    if (query.remoteType) filters.remoteType = query.remoteType;
+    if (query.q) {
+      const keyword = new RegExp(query.q, "i");
+      filters.$or = [{ title: keyword }, { description: keyword }];
+    }
 
     // Limit results to avoid huge responses.
-    const limit = Math.min(Number(req.query.limit || 50), 200);
-    const jobs = await jobModel.find(filters).sort({ postedDate: -1 }).limit(limit);
+    const limit = Math.min(Number(query.limit || 50), 200);
+    const page = Math.max(Number(query.page || 1), 1);
+    const skip = (page - 1) * limit;
+
+    const [jobs, total] = await Promise.all([
+      jobModel.find(filters).sort({ postedDate: -1 }).skip(skip).limit(limit).lean(),
+      jobModel.countDocuments(filters)
+    ]);
 
     return res.json({
       count: jobs.length,
+      total,
+      page,
+      limit,
       jobs
     });
   } catch (error) {

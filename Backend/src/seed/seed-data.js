@@ -62,66 +62,6 @@ export const sources = [
     createdAt: new Date()
   },
   {
-    name: "Accenture",
-    website: "https://www.accenture.com",
-    careerPage: "https://www.accenture.com/in-en/careers",
-    sourceType: "company",
-    region: "India",
-    tags: ["consulting", "mnc"],
-    active: true,
-    createdAt: new Date()
-  },
-  {
-    name: "Flipkart",
-    website: "https://www.flipkart.com",
-    careerPage: "https://www.flipkartcareers.com/flipkart/",
-    sourceType: "company",
-    region: "India",
-    tags: ["ecommerce", "product"],
-    active: true,
-    createdAt: new Date()
-  },
-  {
-    name: "Swiggy",
-    website: "https://www.swiggy.com",
-    careerPage: "https://careers.swiggy.com/#/",
-    sourceType: "company",
-    region: "India",
-    tags: ["startup", "product"],
-    active: true,
-    createdAt: new Date()
-  },
-  {
-    name: "JPMorgan Chase",
-    website: "https://www.jpmorganchase.com",
-    careerPage: "https://www.jpmorganchase.com/careers",
-    sourceType: "company",
-    region: "Global",
-    tags: ["finance", "mnc"],
-    active: true,
-    createdAt: new Date()
-  },
-  {
-    name: "Paychex",
-    website: "https://www.paychex.com",
-    careerPage: "https://www.paychexcareers.in/",
-    sourceType: "company",
-    region: "India",
-    tags: ["saas", "mnc"],
-    active: true,
-    createdAt: new Date()
-  },
-  {
-    name: "Deloitte",
-    website: "https://www.deloitte.com",
-    careerPage: "https://www.deloitte.com/in/en/careers.html",
-    sourceType: "company",
-    region: "India",
-    tags: ["consulting", "mnc"],
-    active: true,
-    createdAt: new Date()
-  },
-  {
     name: "Smartsheet",
     website: "https://www.smartsheet.com",
     careerPage: "https://boards.greenhouse.io/smartsheet",
@@ -132,32 +72,12 @@ export const sources = [
     createdAt: new Date()
   },
   {
-    name: "Myntra",
-    website: "https://www.myntra.com",
-    careerPage: "https://boards.greenhouse.io/myntra",
-    sourceType: "company",
-    region: "India",
-    tags: ["greenhouse", "ecommerce"],
-    active: true,
-    createdAt: new Date()
-  },
-  {
     name: "Speechify",
     website: "https://www.speechify.com",
     careerPage: "https://boards.greenhouse.io/speechify",
     sourceType: "company",
     region: "Global",
     tags: ["greenhouse", "ai"],
-    active: true,
-    createdAt: new Date()
-  },
-  {
-    name: "User Interviews",
-    website: "https://www.userinterviews.com",
-    careerPage: "https://boards.greenhouse.io/userinterviews",
-    sourceType: "company",
-    region: "Global",
-    tags: ["greenhouse", "saas"],
     active: true,
     createdAt: new Date()
   },
@@ -202,22 +122,22 @@ export const sources = [
     createdAt: new Date()
   },
   {
-    name: "Bosch Group",
-    website: "https://www.bosch.com",
-    careerPage: "https://careers.smartrecruiters.com/BoschGroup/india",
+    name: "Microsoft",
+    website: "https://www.microsoft.com",
+    careerPage: "https://careers.microsoft.com/v2/global/en/locations/india.html",
     sourceType: "company",
     region: "India",
-    tags: ["smartrecruiters", "engineering"],
+    tags: ["mnc", "tech"],
     active: true,
     createdAt: new Date()
   },
   {
-    name: "GetMyUni",
-    website: "https://www.getmyuni.com",
-    careerPage: "https://careers.smartrecruiters.com/GetMyUni",
+    name: "Google",
+    website: "https://www.google.com",
+    careerPage: "https://www.google.com/about/careers/applications/jobs/results",
     sourceType: "company",
-    region: "India",
-    tags: ["smartrecruiters", "education"],
+    region: "Global",
+    tags: ["mnc", "tech"],
     active: true,
     createdAt: new Date()
   }

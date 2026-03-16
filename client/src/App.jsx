@@ -4,12 +4,19 @@ import "./App.scss";
 
 function App() {
   const [theme, setTheme] = useState("default");
-  const [prompt, setPrompt] = useState(
-    "Top MNC companies hiring MERN stack developers for freshers in India"
-  );
+  const [prompt, setPrompt] = useState("Search company name or type all jobs");
   const [results, setResults] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(9);
+  const [relaxed, setRelaxed] = useState(null);
+  const [includeRemote, setIncludeRemote] = useState(true);
+  const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [showReport, setShowReport] = useState(false);
+  const [toast, setToast] = useState("");
 
   const dummySignals = useMemo(
     () => [
@@ -21,15 +28,24 @@ function App() {
     []
   );
 
-  const fetchSearchResults = async () => {
+  const fetchSearchResults = async (nextPage = 1, append = false, overridePrompt) => {
     try {
       setError("");
       setIsLoading(true);
+      const effectivePrompt =
+        typeof overridePrompt === "string" && overridePrompt.trim().length > 0
+          ? overridePrompt
+          : prompt;
 
       const response = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({
+          prompt: effectivePrompt,
+          includeRemote,
+          page: nextPage,
+          limit
+        })
       });
 
       const data = await response.json();
@@ -38,11 +54,38 @@ function App() {
         throw new Error(data?.error || "Search failed");
       }
 
-      setResults(data.results || []);
+      const incoming = data.results || [];
+      setResults((prev) => (append ? [...prev, ...incoming] : incoming));
+      setTotal(data.total || incoming.length);
+      setPage(data.page || nextPage);
+      setRelaxed(data.relaxed || null);
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const showToastMessage = (message) => {
+    setToast(message);
+    window.clearTimeout(showToastMessage._timer);
+    showToastMessage._timer = window.setTimeout(() => setToast(""), 2500);
+  };
+
+  const applyPromptAndSearch = (value) => {
+    setPrompt(value);
+    fetchSearchResults(1, false, value);
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch("/api/stats");
+      const data = await response.json();
+      if (response.ok) {
+        setStats(data);
+      }
+    } catch {
+      // Ignore stats errors on the UI.
     }
   };
 
@@ -69,8 +112,98 @@ function App() {
     return () => ctx.revert();
   }, []);
 
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const formatTimestamp = (value) => {
+    if (!value) return "Not updated yet";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Not updated yet";
+    return date.toLocaleString();
+  };
+
+  const decodeHtml = (value = "") => {
+    if (!value) return "";
+    const textarea = document.createElement("textarea");
+    textarea.innerHTML = value;
+    return textarea.value;
+  };
+
+  const sanitizeDescription = (value = "") => {
+    if (!value) return "<p>No description provided.</p>";
+    const decoded = decodeHtml(value);
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(decoded, "text/html");
+
+    doc
+      .querySelectorAll("script, style, noscript, iframe, object, embed")
+      .forEach((node) => node.remove());
+
+    const allowedTags = new Set([
+      "p",
+      "br",
+      "strong",
+      "em",
+      "ul",
+      "ol",
+      "li",
+      "a",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "div",
+      "span"
+    ]);
+
+    const isSafeUrl = (href) => /^https?:\/\//i.test(href || "");
+
+    const walk = (node) => {
+      const children = Array.from(node.childNodes);
+
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const tag = node.tagName.toLowerCase();
+        if (!allowedTags.has(tag)) {
+          const fragment = doc.createDocumentFragment();
+          children.forEach((child) => fragment.appendChild(child));
+          node.replaceWith(fragment);
+          children.forEach(walk);
+          return;
+        }
+
+        Array.from(node.attributes).forEach((attr) => {
+          const name = attr.name.toLowerCase();
+          if (tag === "a" && name === "href") {
+            const href = node.getAttribute("href");
+            if (!isSafeUrl(href)) {
+              node.removeAttribute("href");
+            }
+          } else {
+            node.removeAttribute(attr.name);
+          }
+        });
+
+        if (tag === "a") {
+          node.setAttribute("target", "_blank");
+          node.setAttribute("rel", "noreferrer");
+        }
+      }
+
+      children.forEach(walk);
+    };
+
+    Array.from(doc.body.childNodes).forEach(walk);
+    const sanitized = doc.body.innerHTML.trim();
+    return sanitized || "<p>No description provided.</p>";
+  };
+
   const handleThemeToggle = () => {
     setTheme((prev) => (prev === "default" ? "alt" : "default"));
+  };
+
+  const openJob = (job) => {
+    setSelectedJob(job);
   };
 
   return (
@@ -90,7 +223,11 @@ function App() {
           <button className="ghost" type="button" onClick={handleThemeToggle}>
             {theme === "default" ? "Switch to Pulse" : "Switch to Focus"}
           </button>
-          <button className="primary" type="button">
+          <button
+            className="primary"
+            type="button"
+            onClick={() => showToastMessage("Thanks! We will reach out soon.")}
+          >
             Get early access
           </button>
         </div>
@@ -113,14 +250,14 @@ function App() {
                 className="prompt"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  fetchSearchResults();
+                  fetchSearchResults(1, false);
                 }}
               >
                 <input
                   type="text"
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
-                  placeholder="Ask for roles, stacks, locations..."
+                  placeholder="Search company name or type all jobs"
                 />
                 <button type="submit" disabled={isLoading}>
                   {isLoading ? "Searching..." : "Analyze"}
@@ -128,26 +265,57 @@ function App() {
               </form>
               {error && <p className="error-text">{error}</p>}
 
+              <div className="filters">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={includeRemote}
+                    onChange={(event) => setIncludeRemote(event.target.checked)}
+                  />
+                  Include remote roles
+                </label>
+              </div>
+
               <div className="quick-tags">
-                <button type="button">Fresher</button>
-                <button type="button">Remote</button>
-                <button type="button">MERN</button>
-                <button type="button">India</button>
+                <button type="button" onClick={() => applyPromptAndSearch("all jobs")}>
+                  All jobs
+                </button>
+                <button type="button" onClick={() => applyPromptAndSearch("Amazon")}>
+                  Amazon
+                </button>
+                <button type="button" onClick={() => applyPromptAndSearch("LinkedIn")}>
+                  LinkedIn
+                </button>
+                <button type="button" onClick={() => applyPromptAndSearch("BitGo")}>
+                  BitGo
+                </button>
+                <button type="button" onClick={() => applyPromptAndSearch("Smartsheet")}>
+                  Smartsheet
+                </button>
+                <button type="button" onClick={() => applyPromptAndSearch("Speechify")}>
+                  Speechify
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPromptAndSearch("Dun & Bradstreet")}
+                >
+                  Dun & Bradstreet
+                </button>
               </div>
             </div>
 
             <div className="hero__stats">
               <div className="stat">
-                <h3>450+</h3>
-                <p>Verified company sources</p>
+                <h3>{stats?.sources ?? "--"}</h3>
+                <p>Verified sources indexed</p>
               </div>
               <div className="stat">
-                <h3>12k</h3>
+                <h3>{stats?.jobs ?? "--"}</h3>
                 <p>Active roles tracked</p>
               </div>
               <div className="stat">
-                <h3>24h</h3>
-                <p>Freshness guarantee</p>
+                <h3>{stats?.companies ?? "--"}</h3>
+                <p>Companies indexed</p>
               </div>
             </div>
           </div>
@@ -155,7 +323,7 @@ function App() {
           <aside className="hero__card">
             <div className="card__header">
               <span>Live Hiring Signals</span>
-              <span className="chip">Updated 2h ago</span>
+              <span className="chip">{formatTimestamp(stats?.lastJobScrapedAt)}</span>
             </div>
             <ul className="signal-list">
               <li>
@@ -173,7 +341,11 @@ function App() {
             </ul>
             <div className="card__footer">
               <p>AI score: 91/100 for MERN freshness</p>
-              <button type="button" className="link">
+              <button
+                type="button"
+                className="link"
+                onClick={() => setShowReport(true)}
+              >
                 View full report
               </button>
             </div>
@@ -213,7 +385,15 @@ function App() {
                 ? "Results from your backend."
                 : "No results yet. Run a search to see live data."}
             </p>
+            {relaxed && (
+              <p className="relaxed-note">Filters relaxed: {relaxed.join(", ")}</p>
+            )}
           </div>
+          {results.length > 0 && (
+            <div className="results-meta">
+              Showing {results.length} of {total} results
+            </div>
+          )}
           <div className="results-grid">
             {results.map((item, index) => (
               <article className="result-card" key={item._id || index}>
@@ -249,12 +429,24 @@ function App() {
                 <p className="result-card__signal">
                   {dummySignals[index % dummySignals.length]}
                 </p>
-                <button type="button" className="ghost small">
+                <button type="button" className="ghost small" onClick={() => openJob(item)}>
                   View openings
                 </button>
               </article>
             ))}
           </div>
+          {results.length > 0 && results.length < total && (
+            <div className="load-more">
+              <button
+                type="button"
+                className="primary"
+                disabled={isLoading}
+                onClick={() => fetchSearchResults(page + 1, true)}
+              >
+                {isLoading ? "Loading..." : "Load more"}
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="insights" id="insights">
@@ -288,12 +480,109 @@ function App() {
               <span>Hot location</span>
               <strong>Bengaluru</strong>
             </div>
-            <button type="button" className="primary full">
+            <button type="button" className="primary full" onClick={() => setShowReport(true)}>
               Generate my report
             </button>
           </div>
         </section>
       </main>
+
+      {toast && <div className="toast">{toast}</div>}
+
+      {selectedJob && (
+        <div className="modal">
+          <div className="modal__card">
+            <div className="modal__header">
+              <div>
+                <h3>{selectedJob.title}</h3>
+                <p>{selectedJob.companyName}</p>
+              </div>
+              <button type="button" onClick={() => setSelectedJob(null)}>
+                Close
+              </button>
+            </div>
+            <div className="modal__meta">
+              <span>{selectedJob.location || "Location not listed"}</span>
+              <span>{selectedJob.remoteType || "onsite"}</span>
+              <span>{selectedJob.employmentType || "full-time"}</span>
+            </div>
+            <div
+              className="modal__description"
+              dangerouslySetInnerHTML={{
+                __html: sanitizeDescription(selectedJob.description)
+              }}
+            />
+            <div className="modal__stack">
+              {(selectedJob.stack || []).map((tech) => (
+                <span key={tech}>{tech}</span>
+              ))}
+            </div>
+            <div className="modal__actions">
+              {selectedJob.jobUrl && (
+                <a href={selectedJob.jobUrl} target="_blank" rel="noreferrer">
+                  Open job link
+                </a>
+              )}
+              {selectedJob.companyCareerPage && (
+                <a href={selectedJob.companyCareerPage} target="_blank" rel="noreferrer">
+                  Company career page
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReport && (
+        <div className="modal">
+          <div className="modal__card report">
+            <div className="modal__header">
+              <div>
+                <h3>Report summary</h3>
+                <p>Latest platform snapshot</p>
+              </div>
+              <button type="button" onClick={() => setShowReport(false)}>
+                Close
+              </button>
+            </div>
+            <div className="report__grid">
+              <div>
+                <h4>Sources</h4>
+                <p>{stats?.sources ?? "--"}</p>
+              </div>
+              <div>
+                <h4>Companies</h4>
+                <p>{stats?.companies ?? "--"}</p>
+              </div>
+              <div>
+                <h4>Jobs</h4>
+                <p>{stats?.jobs ?? "--"}</p>
+              </div>
+              <div>
+                <h4>Last crawl</h4>
+                <p>{formatTimestamp(stats?.lastSourceCrawledAt)}</p>
+              </div>
+            </div>
+            <div className="report__tips">
+              <h4>Suggested next searches</h4>
+              <div className="report__tags">
+                <button type="button" onClick={() => applyPromptAndSearch("all jobs")}>
+                  All jobs
+                </button>
+                <button type="button" onClick={() => applyPromptAndSearch("frontend")}>
+                  Frontend
+                </button>
+                <button type="button" onClick={() => applyPromptAndSearch("React")}>
+                  React
+                </button>
+                <button type="button" onClick={() => applyPromptAndSearch("Remote")}>
+                  Remote
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,7 +6,9 @@ export const jobsQuerySchema = z.object({
   experienceLevel: z.string().optional(),
   companyId: z.string().optional(),
   remoteType: z.string().optional(),
-  limit: z.string().optional()
+  limit: z.string().optional(),
+  page: z.string().optional(),
+  q: z.string().optional()
 });
 
 export const jobParamsSchema = z.object({
