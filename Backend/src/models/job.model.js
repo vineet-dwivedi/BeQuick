@@ -26,8 +26,8 @@ const jobSchema = new mongoose.Schema({
     },
     experienceLevel:{
         type: String,
-        enum: ["entry", "mid", "senior", "intern"],
-        default: "entry"
+        enum: ["unspecified", "entry", "mid", "senior", "intern"],
+        default: "unspecified"
     },
     remoteType:{
         type: String,

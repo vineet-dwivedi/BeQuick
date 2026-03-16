@@ -4,6 +4,7 @@ import authRoutes from "./routes/auth.routes.js";
 import companyRoutes from "./routes/companies.routes.js";
 import jobRoutes from "./routes/jobs.routes.js";
 import searchRoutes from "./routes/search.routes.js";
+import sourceRoutes from "./routes/sources.routes.js";
 import { requestLogger } from "./middlewares/logger.middleware.js";
 import { notFound } from "./middlewares/notfound.middleware.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
@@ -28,6 +29,7 @@ app.use("/api", authRoutes);
 app.use("/api", companyRoutes);
 app.use("/api", jobRoutes);
 app.use("/api", searchRoutes);
+app.use("/api", sourceRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Backend is running." });

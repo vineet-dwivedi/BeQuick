@@ -1,5 +1,6 @@
 import jobModel from "../models/job.model.js";
 import searchLogModel from "../models/searchlog.model.js";
+import { parsePromptWithGemini } from "../services/gemini.service.js";
 
 // Very simple prompt parser (no AI yet).
 function extractFilters(prompt = "") {
@@ -38,12 +39,24 @@ export async function searchJobs(req, res) {
     const queryPrompt = req.query?.prompt;
     const prompt = typeof bodyPrompt === "string" ? bodyPrompt : queryPrompt;
 
-    const finalPrompt =
-      typeof prompt === "string" && prompt.trim().length > 0
-        ? prompt
-        : "MERN fresher India";
+    const promptProvided = typeof prompt === "string" && prompt.trim().length > 0;
+    const finalPrompt = promptProvided ? prompt : "MERN fresher India";
 
-    const filters = extractFilters(finalPrompt);
+    let filters = extractFilters(finalPrompt);
+
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const aiFilters = await parsePromptWithGemini(finalPrompt);
+        filters = {
+          stack: aiFilters.stack?.length ? aiFilters.stack : filters.stack,
+          experienceLevel: aiFilters.experienceLevel ?? filters.experienceLevel,
+          companyType: aiFilters.companyType ?? filters.companyType,
+          location: aiFilters.location ?? filters.location
+        };
+      } catch (error) {
+        // If Gemini fails, keep the simple rule-based filters.
+      }
+    }
     const query = {};
 
     // Convert filters into a MongoDB query.
@@ -51,13 +64,33 @@ export async function searchJobs(req, res) {
     if (filters.experienceLevel) query.experienceLevel = filters.experienceLevel;
     if (filters.location) query.location = new RegExp(filters.location, "i");
 
+    const runQuery = async (mongoQuery) =>
+      jobModel
+        .find(mongoQuery)
+        .populate("companyId", "name careerPage website")
+        .sort({ postedDate: -1 })
+        .limit(50)
+        .lean();
+
     // Fetch matching jobs with company info.
-    const results = await jobModel
-      .find(query)
-      .populate("companyId", "name careerPage website")
-      .sort({ postedDate: -1 })
-      .limit(50)
-      .lean();
+    let results = await runQuery(query);
+    const relaxedFilters = [];
+    const locationIsExplicit = promptProvided && Boolean(filters.location);
+
+    // If nothing matched, relax location first, then experience.
+    if (results.length === 0 && query.location && !locationIsExplicit) {
+      const relaxedQuery = { ...query };
+      delete relaxedQuery.location;
+      results = await runQuery(relaxedQuery);
+      if (results.length > 0) relaxedFilters.push("location");
+    }
+
+    if (results.length === 0 && query.experienceLevel) {
+      const relaxedQuery = { ...query };
+      delete relaxedQuery.experienceLevel;
+      results = await runQuery(relaxedQuery);
+      if (results.length > 0) relaxedFilters.push("experienceLevel");
+    }
 
     const enrichedResults = results.map((job) => ({
       ...job,
@@ -75,6 +108,7 @@ export async function searchJobs(req, res) {
     return res.json({
       prompt: finalPrompt,
       filters,
+      relaxed: relaxedFilters.length ? relaxedFilters : null,
       count: enrichedResults.length,
       results: enrichedResults
     });

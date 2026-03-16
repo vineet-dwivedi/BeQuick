@@ -37,6 +37,7 @@ This file explains the backend code in simple language.
 **Search Controller**
 - `searchJobs` reads a prompt, extracts basic filters, and returns jobs.
 - It also saves the search into `searchLogs`.
+- If the user explicitly provides a location, the API does not relax it.
 
 **Routes**
 - Auth routes are in `Backend/src/routes/auth.routes.js`.
@@ -65,6 +66,7 @@ This file explains the backend code in simple language.
 **Seed Data**
 - `Backend/src/seed/seed-data.js` has real sample jobs.
 - `Backend/src/seed/seed.js` inserts them into MongoDB.
+- `Backend/src/seed/seed-sources.js` inserts sources (career pages) without deleting existing data.
 
 **Environment**
 - Config is loaded from `.env`.
@@ -111,6 +113,8 @@ This file explains the backend code in simple language.
   Clears old data.
 - `insertMany([...])`  
   Inserts many documents at once.
+- `seed:sources`  
+  Upserts sources by `careerPage` so you can run it safely multiple times.
 
 ---
 
@@ -131,6 +135,90 @@ This file explains the backend code in simple language.
 - `GET /api/search?prompt=...` also works now.
 - Helpful when testing in the address bar.
  - If `prompt` is missing, a default prompt is used.
+
+---
+
+## Gemini LLM Integration
+
+**Where it is**
+- `Backend/src/services/gemini.service.js`
+- Uses `GEMINI_API_KEY` and `GEMINI_MODEL` from `.env`.
+
+**What it does**
+- Converts user prompt into structured filters (stack, location, experience).
+- Returns JSON using Gemini structured output.
+
+**Fallback**
+- If Gemini fails or key is missing, the app uses the simple rule‑based parser.
+
+---
+
+## Automatic Job Fetch (Crawler + Queue)
+
+**Queue**
+- File: `Backend/src/queue/crawl.queue.js`
+- Uses BullMQ + Redis.
+- Each job represents one company to crawl.
+
+**Worker**
+- File: `Backend/src/worker/crawl.worker.js`
+- Pulls jobs from the queue.
+- Crawls the company career page.
+- Saves or updates jobs in MongoDB.
+
+**Crawler**
+- File: `Backend/src/crawlers/jsonld.crawler.js`
+- Extracts jobs from JSON‑LD `JobPosting` blocks.
+- Works well for many career pages and job boards.
+
+**ATS Adapters**
+- File: `Backend/src/crawlers/jobs.crawler.js`
+- Supports Greenhouse, Lever, and SmartRecruiters APIs.
+- Uses ATS APIs first, then falls back to JSON‑LD.
+
+**Experience Level Detection**
+- Worker now tries to infer experience from text (e.g. "3 years" → mid).
+- If it cannot detect, it stores `experienceLevel = "unspecified"`.
+
+**Scheduler**
+- File: `Backend/src/scheduler/crawl.scheduler.js`
+- Runs daily at 2:00 AM.
+- Enqueues all companies that have a `careerPage`.
+
+**Scripts**
+- `npm run worker` → start the crawler worker
+- `npm run schedule` → start daily scheduler
+- `npm run schedule:once` → enqueue once now
+
+**Env**
+- `REDIS_URL` must be set for the queue.
+
+---
+
+## Sources Pipeline (New)
+
+**Why it exists**
+- A "source" is a place we crawl for jobs (company career page, job board, or directory).
+- This lets you grow the crawler without hardcoding companies.
+
+**Model**
+- File: `Backend/src/models/source.model.js`
+- Stores name, careerPage, sourceType, region, tags, and lastCrawledAt.
+
+**API routes**
+- `GET /api/sources` list sources
+- `POST /api/sources` create a source
+- `GET /api/sources/:id` single source
+- `PUT /api/sources/:id` update a source
+- `DELETE /api/sources/:id` delete a source
+
+**Scheduler update**
+- Scheduler now reads from `sources` first.
+- It still falls back to `companies` if no sources exist.
+
+**Worker update**
+- If the queue job has no `companyId`, the worker creates a company on the fly.
+- After crawl, it updates `lastCrawledAt` on the source.
 
 **Loading + error**
 - UI shows `Searching...` on submit.

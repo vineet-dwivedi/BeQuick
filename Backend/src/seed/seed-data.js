@@ -50,6 +50,179 @@ export const companies = [
   }
 ];
 
+export const sources = [
+  {
+    name: "Amazon",
+    website: "https://www.amazon.com",
+    careerPage: "https://www.amazon.jobs/en/",
+    sourceType: "company",
+    region: "Global",
+    tags: ["tech", "mnc"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "Accenture",
+    website: "https://www.accenture.com",
+    careerPage: "https://www.accenture.com/in-en/careers",
+    sourceType: "company",
+    region: "India",
+    tags: ["consulting", "mnc"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "Flipkart",
+    website: "https://www.flipkart.com",
+    careerPage: "https://www.flipkartcareers.com/flipkart/",
+    sourceType: "company",
+    region: "India",
+    tags: ["ecommerce", "product"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "Swiggy",
+    website: "https://www.swiggy.com",
+    careerPage: "https://careers.swiggy.com/#/",
+    sourceType: "company",
+    region: "India",
+    tags: ["startup", "product"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "JPMorgan Chase",
+    website: "https://www.jpmorganchase.com",
+    careerPage: "https://www.jpmorganchase.com/careers",
+    sourceType: "company",
+    region: "Global",
+    tags: ["finance", "mnc"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "Paychex",
+    website: "https://www.paychex.com",
+    careerPage: "https://www.paychexcareers.in/",
+    sourceType: "company",
+    region: "India",
+    tags: ["saas", "mnc"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "Deloitte",
+    website: "https://www.deloitte.com",
+    careerPage: "https://www.deloitte.com/in/en/careers.html",
+    sourceType: "company",
+    region: "India",
+    tags: ["consulting", "mnc"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "Smartsheet",
+    website: "https://www.smartsheet.com",
+    careerPage: "https://boards.greenhouse.io/smartsheet",
+    sourceType: "company",
+    region: "Global",
+    tags: ["greenhouse", "saas"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "Myntra",
+    website: "https://www.myntra.com",
+    careerPage: "https://boards.greenhouse.io/myntra",
+    sourceType: "company",
+    region: "India",
+    tags: ["greenhouse", "ecommerce"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "Speechify",
+    website: "https://www.speechify.com",
+    careerPage: "https://boards.greenhouse.io/speechify",
+    sourceType: "company",
+    region: "Global",
+    tags: ["greenhouse", "ai"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "User Interviews",
+    website: "https://www.userinterviews.com",
+    careerPage: "https://boards.greenhouse.io/userinterviews",
+    sourceType: "company",
+    region: "Global",
+    tags: ["greenhouse", "saas"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "BitGo",
+    website: "https://www.bitgo.com",
+    careerPage: "https://boards.greenhouse.io/bitgo",
+    sourceType: "company",
+    region: "Global",
+    tags: ["greenhouse", "fintech"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "Level AI",
+    website: "https://www.level.ai",
+    careerPage: "https://jobs.lever.co/levelai",
+    sourceType: "company",
+    region: "Global",
+    tags: ["lever", "ai"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "Dun & Bradstreet",
+    website: "https://www.dnb.com",
+    careerPage: "https://jobs.lever.co/dnb",
+    sourceType: "company",
+    region: "Global",
+    tags: ["lever", "data"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "LinkedIn",
+    website: "https://www.linkedin.com",
+    careerPage: "https://careers.smartrecruiters.com/LinkedIn3",
+    sourceType: "company",
+    region: "Global",
+    tags: ["smartrecruiters", "tech"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "Bosch Group",
+    website: "https://www.bosch.com",
+    careerPage: "https://careers.smartrecruiters.com/BoschGroup/india",
+    sourceType: "company",
+    region: "India",
+    tags: ["smartrecruiters", "engineering"],
+    active: true,
+    createdAt: new Date()
+  },
+  {
+    name: "GetMyUni",
+    website: "https://www.getmyuni.com",
+    careerPage: "https://careers.smartrecruiters.com/GetMyUni",
+    sourceType: "company",
+    region: "India",
+    tags: ["smartrecruiters", "education"],
+    active: true,
+    createdAt: new Date()
+  }
+];
+
 export const jobs = [
   {
     companyKey: "peacock",
