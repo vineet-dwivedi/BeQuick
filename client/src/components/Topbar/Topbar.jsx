@@ -1,6 +1,6 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { useAuth } from "../services/auth.jsx";
-import { useTheme } from "../services/theme.jsx";
+import { useAuth } from "../../services/auth.jsx";
+import { useTheme } from "../../services/theme.jsx";
 
 export default function Topbar() {
   const { user, logout } = useAuth();

@@ -1,0 +1,22 @@
+@use "../../styles/tokens" as *;
+
+.page-loading {
+  display: grid;
+  place-items: center;
+  min-height: 70vh;
+}
+
+.loading-card {
+  padding: 28px;
+  border-radius: $radius-xl;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  max-width: 520px;
+}
+
+@media (max-width: 550px) {
+  .loading-card {
+    padding: 20px;
+  }
+}

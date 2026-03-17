@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import cron from "node-cron";
+import mongoose from "mongoose";
 import connectionDB from "../config/db.js";
 import companyModel from "../models/company.model.js";
 import sourceModel from "../models/source.model.js";
@@ -7,8 +8,17 @@ import { crawlQueue } from "../queue/crawl.queue.js";
 
 dotenv.config();
 
-async function enqueueCompanies() {
+const CRON_SCHEDULE = process.env.CRAWL_CRON || "0 2 * * *";
+const CRON_TIMEZONE = process.env.CRAWL_TIMEZONE || "Asia/Kolkata";
+const SCHEDULER_ENABLED = process.env.SCHEDULER_ENABLED !== "false";
+
+const ensureDb = async () => {
+  if (mongoose.connection.readyState === 1) return;
   await connectionDB();
+};
+
+async function enqueueCompanies() {
+  await ensureDb();
   const companies = await companyModel.find({ careerPage: { $ne: "" } }).lean();
   const sources = await sourceModel.find({ active: true, careerPage: { $ne: "" } }).lean();
   const seenCareerPages = new Set();
@@ -63,9 +73,27 @@ async function enqueueCompanies() {
 const runOnce = process.env.RUN_ONCE === "true" || process.argv.includes("--once");
 
 if (runOnce) {
-  enqueueCompanies().then(() => process.exit(0));
-} else {
-  cron.schedule("0 2 * * *", () => {
-    enqueueCompanies();
-  });
+  enqueueCompanies()
+    .then(() => process.exit(0))
+    .catch((error) => {
+      console.error("Scheduler run failed:", error);
+      process.exit(1);
+    });
+} else if (SCHEDULER_ENABLED) {
+  if (!cron.validate(CRON_SCHEDULE)) {
+    console.warn(
+      `Invalid CRAWL_CRON "${CRON_SCHEDULE}". Scheduler will not start until it is fixed.`
+    );
+  } else {
+    cron.schedule(
+      CRON_SCHEDULE,
+      () => {
+        enqueueCompanies().catch((error) => {
+          console.error("Scheduled crawl failed:", error);
+        });
+      },
+      { timezone: CRON_TIMEZONE }
+    );
+    console.log(`Daily crawl scheduled: ${CRON_SCHEDULE} (${CRON_TIMEZONE})`);
+  }
 }

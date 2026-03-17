@@ -1,11 +1,11 @@
 import { Route, Routes } from "react-router-dom";
 import "./App.scss";
-import MainLayout from "./layouts/MainLayout.jsx";
-import ProtectedRoute from "./components/ProtectedRoute.jsx";
-import HomePage from "./pages/HomePage.jsx";
-import LoginPage from "./pages/LoginPage.jsx";
-import AdminPage from "./pages/AdminPage.jsx";
-import NotFoundPage from "./pages/NotFoundPage.jsx";
+import MainLayout from "./layouts/MainLayout/MainLayout.jsx";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute.jsx";
+import HomePage from "./pages/Home/HomePage.jsx";
+import LoginPage from "./pages/Login/LoginPage.jsx";
+import AdminPage from "./pages/Admin/AdminPage.jsx";
+import NotFoundPage from "./pages/NotFound/NotFoundPage.jsx";
 
 function App() {
   return (

@@ -1,250 +1,41 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import gsap from "gsap";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
-import { fetchStats, searchJobs } from "../services/api.js";
-
-const DEFAULT_PROMPT = "Search company name or type all jobs";
-
-const formatTimestamp = (value) => {
-  if (!value) return "Not updated yet";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Not updated yet";
-  return date.toLocaleString();
-};
-
-const decodeHtml = (value = "") => {
-  if (!value) return "";
-  const textarea = document.createElement("textarea");
-  textarea.innerHTML = value;
-  return textarea.value;
-};
-
-const sanitizeDescription = (value = "") => {
-  if (!value) return "<p>No description provided.</p>";
-  const decoded = decodeHtml(value);
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(decoded, "text/html");
-
-  doc
-    .querySelectorAll("script, style, noscript, iframe, object, embed")
-    .forEach((node) => node.remove());
-
-  const allowedTags = new Set([
-    "p",
-    "br",
-    "strong",
-    "em",
-    "ul",
-    "ol",
-    "li",
-    "a",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-    "div",
-    "span"
-  ]);
-
-  const isSafeUrl = (href) => /^https?:\/\//i.test(href || "");
-
-  const walk = (node) => {
-    const children = Array.from(node.childNodes);
-
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const tag = node.tagName.toLowerCase();
-      if (!allowedTags.has(tag)) {
-        const fragment = doc.createDocumentFragment();
-        children.forEach((child) => fragment.appendChild(child));
-        node.replaceWith(fragment);
-        children.forEach(walk);
-        return;
-      }
-
-      Array.from(node.attributes).forEach((attr) => {
-        const name = attr.name.toLowerCase();
-        if (tag === "a" && name === "href") {
-          const href = node.getAttribute("href");
-          if (!isSafeUrl(href)) {
-            node.removeAttribute("href");
-          }
-        } else {
-          node.removeAttribute(attr.name);
-        }
-      });
-
-      if (tag === "a") {
-        node.setAttribute("target", "_blank");
-        node.setAttribute("rel", "noreferrer");
-      }
-    }
-
-    children.forEach(walk);
-  };
-
-  Array.from(doc.body.childNodes).forEach(walk);
-  const sanitized = doc.body.innerHTML.trim();
-  return sanitized || "<p>No description provided.</p>";
-};
-
-const getDomainFromUrl = (value = "") => {
-  try {
-    const normalized = /^https?:\/\//i.test(value) ? value : `https://${value}`;
-    const url = new URL(normalized);
-    return url.hostname.replace(/^www\./, "");
-  } catch {
-    return "";
-  }
-};
-
-const getCompanyLogoUrl = (item) => {
-  const domain =
-    getDomainFromUrl(item?.companyWebsite) ||
-    getDomainFromUrl(item?.companyCareerPage) ||
-    getDomainFromUrl(item?.jobUrl);
-
-  if (!domain) return "";
-  return `https://logo.clearbit.com/${domain}?size=96`;
-};
-
-const getCompanyInitials = (name = "") => {
-  const words = String(name).trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "CO";
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0][0] + words[1][0]).toUpperCase();
-};
+import { useHomeState } from "./hooks/useHomeState.js";
+import {
+  DEFAULT_PROMPT,
+  DUMMY_SIGNALS,
+  SIGNAL_SLIDES
+} from "./state/homeConstants.js";
+import {
+  formatTimestamp,
+  getCompanyInitials,
+  getCompanyLogoUrl,
+  sanitizeDescription
+} from "./state/homeUtils.js";
 
 export default function HomePage() {
-  const pageRef = useRef(null);
-  const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
-  const [results, setResults] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [limit] = useState(9);
-  const [relaxed, setRelaxed] = useState(null);
-  const [includeRemote, setIncludeRemote] = useState(true);
-  const [stats, setStats] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [selectedJob, setSelectedJob] = useState(null);
-  const [showReport, setShowReport] = useState(false);
-
-  const dummySignals = useMemo(
-    () => [
-      "Hiring spike in the last 14 days",
-      "Consistent openings across teams",
-      "New grad roles updated this week",
-      "Fresh roles updated in last 48 hours"
-    ],
-    []
-  );
-
-  const signalSlides = useMemo(
-    () => [
-      {
-        title: "Signal velocity",
-        metric: "2.9x",
-        detail: "Hiring signals rising faster than last month."
-      },
-      {
-        title: "Trusted sources",
-        metric: "98%",
-        detail: "Postings verified against official career pages."
-      },
-      {
-        title: "Remote map",
-        metric: "41%",
-        detail: "Remote-first roles flagged with confidence."
-      },
-      {
-        title: "Stack focus",
-        metric: "MERN",
-        detail: "Roles scored highest for full-stack fit."
-      },
-      {
-        title: "Freshness",
-        metric: "24h",
-        detail: "Average time to surface a new listing."
-      }
-    ],
-    []
-  );
-
-
-  const fetchSearchResults = async (nextPage = 1, append = false, overridePrompt) => {
-    try {
-      setError("");
-      setIsLoading(true);
-      const effectivePrompt =
-        typeof overridePrompt === "string" && overridePrompt.trim().length > 0
-          ? overridePrompt
-          : prompt;
-
-      const data = await searchJobs({
-        prompt: effectivePrompt,
-        includeRemote,
-        page: nextPage,
-        limit
-      });
-
-      const incoming = data.results || [];
-      setResults((prev) => (append ? [...prev, ...incoming] : incoming));
-      setTotal(data.total || incoming.length);
-      setPage(data.page || nextPage);
-      setRelaxed(data.relaxed || null);
-    } catch (err) {
-      setError(err.message || "Something went wrong");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const applyPromptAndSearch = (value) => {
-    setPrompt(value);
-    fetchSearchResults(1, false, value);
-  };
-
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const data = await fetchStats();
-        setStats(data);
-      } catch {
-        // Ignore stats errors on the UI.
-      }
-    };
-
-    loadStats();
-  }, []);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".hero__eyebrow", { y: 24, opacity: 0, duration: 0.6 });
-      gsap.from(".hero__title", { y: 30, opacity: 0, duration: 0.8, delay: 0.1 });
-      gsap.from(".hero__subtitle", { y: 20, opacity: 0, duration: 0.8, delay: 0.2 });
-      gsap.from(".hero__actions", { y: 24, opacity: 0, duration: 0.8, delay: 0.3 });
-      gsap.from(".hero__panel", { y: 28, opacity: 0, duration: 0.9, delay: 0.35 });
-      gsap.from(".feature-card", {
-        y: 24,
-        opacity: 0,
-        duration: 0.6,
-        stagger: 0.1,
-        delay: 0.5
-      });
-      gsap.from(".elite-swiper .swiper-slide", {
-        y: 26,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.12,
-        delay: 0.6
-      });
-    }, pageRef);
-
-    return () => ctx.revert();
-  }, []);
+  const {
+    pageRef,
+    prompt,
+    setPrompt,
+    results,
+    total,
+    page,
+    relaxed,
+    includeRemote,
+    setIncludeRemote,
+    stats,
+    isLoading,
+    error,
+    selectedJob,
+    setSelectedJob,
+    showReport,
+    setShowReport,
+    fetchSearchResults,
+    applyPromptAndSearch
+  } = useHomeState();
 
   return (
     <div className="page page-home" ref={pageRef}>
@@ -291,28 +82,22 @@ export default function HomePage() {
             </div>
 
             <div className="quick-tags">
-              <button type="button" onClick={() => applyPromptAndSearch("all jobs")}
-              >
+              <button type="button" onClick={() => applyPromptAndSearch("all jobs")}>
                 All jobs
               </button>
-              <button type="button" onClick={() => applyPromptAndSearch("Amazon")}
-              >
+              <button type="button" onClick={() => applyPromptAndSearch("Amazon")}>
                 Amazon
               </button>
-              <button type="button" onClick={() => applyPromptAndSearch("LinkedIn")}
-              >
+              <button type="button" onClick={() => applyPromptAndSearch("LinkedIn")}>
                 LinkedIn
               </button>
-              <button type="button" onClick={() => applyPromptAndSearch("BitGo")}
-              >
+              <button type="button" onClick={() => applyPromptAndSearch("BitGo")}>
                 BitGo
               </button>
-              <button type="button" onClick={() => applyPromptAndSearch("Smartsheet")}
-              >
+              <button type="button" onClick={() => applyPromptAndSearch("Smartsheet")}>
                 Smartsheet
               </button>
-              <button type="button" onClick={() => applyPromptAndSearch("Speechify")}
-              >
+              <button type="button" onClick={() => applyPromptAndSearch("Speechify")}>
                 Speechify
               </button>
               <button
@@ -410,7 +195,7 @@ export default function HomePage() {
             1100: { slidesPerView: 3 }
           }}
         >
-          {signalSlides.map((slide) => (
+          {SIGNAL_SLIDES.map((slide) => (
             <SwiperSlide key={slide.title}>
               <article className="signal-card animated-ui">
                 <div className="signal-card__top">
@@ -506,7 +291,7 @@ export default function HomePage() {
                   )}
                 </div>
                 <p className="result-card__signal">
-                  {dummySignals[index % dummySignals.length]}
+                  {DUMMY_SIGNALS[index % DUMMY_SIGNALS.length]}
                 </p>
                 <button
                   type="button"

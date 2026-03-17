@@ -1,14 +1,17 @@
 import { Link } from "react-router-dom";
+import { useNotFoundState } from "./hooks/useNotFoundState.js";
 
 export default function NotFoundPage() {
+  const { eyebrow, title, message, actionLabel } = useNotFoundState();
+
   return (
     <div className="page page-notfound">
       <section className="notfound">
-        <p className="eyebrow">404</p>
-        <h1>Page not found</h1>
-        <p>The page you are looking for does not exist or has moved.</p>
+        <p className="eyebrow">{eyebrow}</p>
+        <h1>{title}</h1>
+        <p>{message}</p>
         <Link className="btn btn-primary" to="/">
-          Back to home
+          {actionLabel}
         </Link>
       </section>
     </div>
