@@ -52,15 +52,24 @@ export async function sendOtpEmail({ email, code }) {
     throw new Error("SMTP is not configured");
   }
 
-  const subject = "Your BeQuick login code";
-  const text = `Your BeQuick login code is ${code}. This code expires in 10 minutes.`;
+  const subject = "Your BeQuick verification code";
+  const text = `Your BeQuick verification code is ${code}. It expires in 10 minutes. If you did not request this, you can ignore this email.`;
   const html = `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-      <h2>BeQuick Login</h2>
-      <p>Your login code is:</p>
-      <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px;">${code}</p>
-      <p>This code expires in 10 minutes.</p>
-      <p>If you did not request this, you can ignore this email.</p>
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; background:#f6f7fb; padding:24px;">
+      <div style="max-width:520px; margin:0 auto; background:#ffffff; border-radius:16px; border:1px solid #e6e9f0; overflow:hidden;">
+        <div style="padding:20px 24px; background:#0b0f16; color:#ffffff;">
+          <h2 style="margin:0; font-size:20px; letter-spacing:1px;">BeQuick</h2>
+          <p style="margin:6px 0 0; color:#c7cbd6; font-size:13px;">Secure login verification</p>
+        </div>
+        <div style="padding:24px;">
+          <p style="margin:0 0 12px; color:#111827;">Use the code below to finish signing in.</p>
+          <div style="font-size:28px; font-weight:700; letter-spacing:6px; text-align:center; background:#f3f4f6; padding:14px 18px; border-radius:12px; margin:16px 0;">
+            ${code}
+          </div>
+          <p style="margin:0; color:#6b7280; font-size:13px;">This code expires in <strong>10 minutes</strong>.</p>
+          <p style="margin:16px 0 0; color:#6b7280; font-size:13px;">If you didn’t request this, you can safely ignore this email.</p>
+        </div>
+      </div>
     </div>
   `;
 

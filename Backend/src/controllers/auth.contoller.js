@@ -88,11 +88,18 @@ export async function requestOtp(req, res) {
     await saveOtp(normalizedEmail, payload, OTP_TTL_SECONDS);
     await setOtpCooldown(normalizedEmail, OTP_COOLDOWN_SECONDS);
 
-    if (!isSmtpConfigured() || OTP_DEV_MODE) {
+    if (OTP_DEV_MODE) {
       console.log(`OTP dev code for ${normalizedEmail}: ${code}`);
       return res.json({
         message: "OTP generated (dev mode).",
         devCode: code
+      });
+    }
+
+    if (!isSmtpConfigured()) {
+      await clearOtp(normalizedEmail);
+      return res.status(500).json({
+        error: "SMTP is not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM."
       });
     }
 
