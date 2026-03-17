@@ -6,6 +6,7 @@ import {
   getSources,
   updateSource
 } from "../controllers/sources.controller.js";
+import { requireAdmin, requireAuth } from "../middlewares/auth.middleware.js";
 import { validateBody, validateParams, validateQuery } from "../middlewares/validate.middleware.js";
 import {
   sourceCreateSchema,
@@ -16,15 +17,41 @@ import {
 
 const router = Router();
 
-router.get("/sources", validateQuery(sourceQuerySchema), getSources);
-router.get("/sources/:id", validateParams(sourceParamsSchema), getSourceById);
-router.post("/sources", validateBody(sourceCreateSchema), createSource);
+router.get(
+  "/sources",
+  requireAuth,
+  requireAdmin,
+  validateQuery(sourceQuerySchema),
+  getSources
+);
+router.get(
+  "/sources/:id",
+  requireAuth,
+  requireAdmin,
+  validateParams(sourceParamsSchema),
+  getSourceById
+);
+router.post(
+  "/sources",
+  requireAuth,
+  requireAdmin,
+  validateBody(sourceCreateSchema),
+  createSource
+);
 router.put(
   "/sources/:id",
+  requireAuth,
+  requireAdmin,
   validateParams(sourceParamsSchema),
   validateBody(sourceUpdateSchema),
   updateSource
 );
-router.delete("/sources/:id", validateParams(sourceParamsSchema), deleteSource);
+router.delete(
+  "/sources/:id",
+  requireAuth,
+  requireAdmin,
+  validateParams(sourceParamsSchema),
+  deleteSource
+);
 
 export default router;

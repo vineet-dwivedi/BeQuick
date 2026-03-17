@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import companyRoutes from "./routes/companies.routes.js";
 import jobRoutes from "./routes/jobs.routes.js";
 import searchRoutes from "./routes/search.routes.js";
@@ -27,6 +28,7 @@ app.use(requestLogger);
 app.use(express.json());
 
 app.use("/api", authRoutes);
+app.use("/api", adminRoutes);
 app.use("/api", companyRoutes);
 app.use("/api", jobRoutes);
 app.use("/api", searchRoutes);
