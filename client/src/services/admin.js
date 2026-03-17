@@ -1,3 +1,5 @@
+import { buildApiUrl } from "./apiBase.js";
+
 const buildQuery = (params = {}) => {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -16,7 +18,7 @@ const withAuth = (token) =>
     : {};
 
 export async function fetchSources(token, params = {}) {
-  const response = await fetch(`/api/sources${buildQuery(params)}`, {
+  const response = await fetch(buildApiUrl(`/api/sources${buildQuery(params)}`), {
     headers: {
       ...withAuth(token)
     }
@@ -29,7 +31,7 @@ export async function fetchSources(token, params = {}) {
 }
 
 export async function createSource(token, payload) {
-  const response = await fetch("/api/sources", {
+  const response = await fetch(buildApiUrl("/api/sources"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -45,7 +47,7 @@ export async function createSource(token, payload) {
 }
 
 export async function updateSource(token, id, payload) {
-  const response = await fetch(`/api/sources/${id}`, {
+  const response = await fetch(buildApiUrl(`/api/sources/${id}`), {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -61,7 +63,7 @@ export async function updateSource(token, id, payload) {
 }
 
 export async function deleteSource(token, id) {
-  const response = await fetch(`/api/sources/${id}`, {
+  const response = await fetch(buildApiUrl(`/api/sources/${id}`), {
     method: "DELETE",
     headers: {
       ...withAuth(token)
@@ -75,7 +77,7 @@ export async function deleteSource(token, id) {
 }
 
 export async function fetchJobs(token, params = {}) {
-  const response = await fetch(`/api/jobs${buildQuery(params)}`, {
+  const response = await fetch(buildApiUrl(`/api/jobs${buildQuery(params)}`), {
     headers: {
       ...withAuth(token)
     }
@@ -88,7 +90,7 @@ export async function fetchJobs(token, params = {}) {
 }
 
 export async function fetchCompanies(token, params = {}) {
-  const response = await fetch(`/api/companies${buildQuery(params)}`, {
+  const response = await fetch(buildApiUrl(`/api/companies${buildQuery(params)}`), {
     headers: {
       ...withAuth(token)
     }
@@ -101,7 +103,7 @@ export async function fetchCompanies(token, params = {}) {
 }
 
 export async function runPriorityCrawl(token) {
-  const response = await fetch("/api/admin/crawl", {
+  const response = await fetch(buildApiUrl("/api/admin/crawl"), {
     method: "POST",
     headers: {
       ...withAuth(token)

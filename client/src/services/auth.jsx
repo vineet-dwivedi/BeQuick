@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { buildApiUrl } from "./apiBase.js";
 
 const AuthContext = createContext(null);
 
@@ -22,7 +23,7 @@ export function AuthProvider({ children }) {
     async (authToken) => {
       if (!authToken) return null;
       try {
-        const response = await fetch("/api/auth/me", {
+        const response = await fetch(buildApiUrl("/api/auth/me"), {
           headers: { Authorization: `Bearer ${authToken}` }
         });
         const data = await response.json();
@@ -72,7 +73,7 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const response = await fetch("/api/auth/request-otp", {
+      const response = await fetch(buildApiUrl("/api/auth/request-otp"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: normalizedEmail })
@@ -107,7 +108,7 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        const response = await fetch("/api/auth/verify-otp", {
+        const response = await fetch(buildApiUrl("/api/auth/verify-otp"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -137,7 +138,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     try {
       if (token) {
-        await fetch("/api/auth/logout", {
+        await fetch(buildApiUrl("/api/auth/logout"), {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` }
         });
