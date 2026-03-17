@@ -739,6 +739,7 @@ body[data-theme="alt"] {
   gap: 8px;
   font-size: 0.9rem;
   color: var(--text-muted);
+  width: 100%;
 }
 
 .auth-input {
@@ -748,6 +749,8 @@ body[data-theme="alt"] {
   font-size: 1rem;
   background: var(--surface-muted);
   color: var(--text-primary);
+  min-height: 44px;
+  width: 100%;
 }
 
 .auth-input.is-locked {
@@ -759,6 +762,7 @@ body[data-theme="alt"] {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  align-items: center;
 }
 
 .auth-dev-code {
@@ -1114,11 +1118,15 @@ body[data-theme="alt"] {
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   gap: 20px;
   margin-top: 20px;
+  align-items: start;
 }
 
 .source-form {
   display: grid;
   gap: 12px;
+  align-content: start;
+  align-items: start;
+  align-self: start;
 }
 
 .form-split {
@@ -1131,6 +1139,7 @@ body[data-theme="alt"] {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .form-checkbox {
@@ -1139,11 +1148,13 @@ body[data-theme="alt"] {
   gap: 10px;
   font-size: 0.9rem;
   color: var(--text-muted);
+  padding: 6px 4px;
 }
 
 .source-list {
   display: grid;
   gap: 16px;
+  align-self: start;
 }
 
 .source-filters {
