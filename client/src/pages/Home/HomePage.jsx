@@ -136,11 +136,11 @@ export default function HomePage() {
               <span>23 new postings in India</span>
             </li>
             <li>
-              <strong>Microsoft</strong>
-              <span>18 roles across cloud teams</span>
+              <strong>Smartsheet</strong>
+              <span>Fresh analytics roles updated this week</span>
             </li>
             <li>
-              <strong>Google</strong>
+              <strong>Speechify</strong>
               <span>New grad roles open this week</span>
             </li>
           </ul>
