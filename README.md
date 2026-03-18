@@ -71,7 +71,8 @@ CRAWL_TIMEZONE=Asia/Kolkata
 - `CORS_ORIGIN` Frontend URL or comma-separated list of allowed frontend URLs
 - `REDIS_URL` Redis connection string for the crawl queue
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` for OTP mail
-- `OTP_TTL_SECONDS`, `OTP_COOLDOWN_SECONDS`, `OTP_MAX_ATTEMPTS`, `OTP_DEV_MODE`
+- `SMTP_CONNECTION_TIMEOUT_MS`, `SMTP_GREETING_TIMEOUT_MS`, `SMTP_SOCKET_TIMEOUT_MS` to fail fast when SMTP is unreachable
+- `OTP_TTL_SECONDS`, `OTP_COOLDOWN_SECONDS`, `OTP_MAX_ATTEMPTS`
 - `GEMINI_API_KEY`, `GEMINI_MODEL` (optional)
 - `PRIORITY_COMPANIES` default fallback companies
 - `VITE_API_URL` frontend-only env that should point to your deployed backend origin for production builds
@@ -99,10 +100,10 @@ CRAWL_TIMEZONE=Asia/Kolkata
 
 **Notes**
 - Redis must be running for the crawler queue.
-- If `OTP_DEV_MODE=true`, the backend returns a dev OTP in the response.
 - Vite dev server proxies `/api` to `http://localhost:4000`.
 
 **Deployment Notes**
 - If the frontend and backend are deployed on different domains, set `client/.env` or your hosting provider env with `VITE_API_URL=https://your-backend-domain.com` before building the client.
 - Set backend `CORS_ORIGIN` to the exact deployed frontend URL. Multiple origins can be comma-separated.
 - The frontend uses `BrowserRouter`, so static hosting also needs an SPA rewrite that serves `index.html` for app routes like `/login` or `/admin`.
+- For Gmail SMTP on deployed hosts, port `587` with `SMTP_SECURE=false` is usually more reliable than port `465`.

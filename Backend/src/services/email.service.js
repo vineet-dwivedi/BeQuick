@@ -8,6 +8,9 @@ const smtpSecure = String(process.env.SMTP_SECURE || "true").toLowerCase() !== "
 const smtpUser = trimValue(process.env.SMTP_USER);
 const smtpPass = trimValue(process.env.SMTP_PASS);
 const smtpFromRaw = trimValue(process.env.SMTP_FROM);
+const smtpConnectionTimeout = Number(process.env.SMTP_CONNECTION_TIMEOUT_MS || 10000);
+const smtpGreetingTimeout = Number(process.env.SMTP_GREETING_TIMEOUT_MS || 10000);
+const smtpSocketTimeout = Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 15000);
 
 function normalizeFrom(value, fallback) {
   const emailRegex = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
@@ -37,6 +40,10 @@ function getTransporter() {
     host: smtpHost,
     port: smtpPort,
     secure: smtpSecure,
+    requireTLS: !smtpSecure,
+    connectionTimeout: smtpConnectionTimeout,
+    greetingTimeout: smtpGreetingTimeout,
+    socketTimeout: smtpSocketTimeout,
     auth: {
       user: smtpUser,
       pass: smtpPass

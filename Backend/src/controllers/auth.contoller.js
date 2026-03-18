@@ -20,7 +20,20 @@ const SALT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 10);
 const OTP_TTL_SECONDS = Number(process.env.OTP_TTL_SECONDS || 600);
 const OTP_COOLDOWN_SECONDS = Number(process.env.OTP_COOLDOWN_SECONDS || 60);
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5);
-const OTP_DEV_MODE = String(process.env.OTP_DEV_MODE || "false").toLowerCase() === "true";
+
+function getOtpEmailErrorMessage(error) {
+  const message = String(error?.message || "");
+
+  if (/invalid login|auth|eauth/i.test(message)) {
+    return "SMTP authentication failed. Check SMTP_USER and SMTP_PASS.";
+  }
+
+  if (/timed out|timeout|greeting/i.test(message)) {
+    return "SMTP connection timed out. Check SMTP host, port, and whether your deploy host allows outbound mail.";
+  }
+
+  return "Failed to send OTP email. Check SMTP settings.";
+}
 
 function signToken(user) {
   // Create a JWT token for the user.
@@ -88,14 +101,6 @@ export async function requestOtp(req, res) {
     await saveOtp(normalizedEmail, payload, OTP_TTL_SECONDS);
     await setOtpCooldown(normalizedEmail, OTP_COOLDOWN_SECONDS);
 
-    if (OTP_DEV_MODE) {
-      console.log(`OTP dev code for ${normalizedEmail}: ${code}`);
-      return res.json({
-        message: "OTP generated (dev mode).",
-        devCode: code
-      });
-    }
-
     if (!isSmtpConfigured()) {
       await clearOtp(normalizedEmail);
       return res.status(500).json({
@@ -108,7 +113,7 @@ export async function requestOtp(req, res) {
     } catch (error) {
       console.error("OTP email failed:", error?.message || error);
       await clearOtp(normalizedEmail);
-      return res.status(500).json({ error: "Failed to send OTP email. Check SMTP settings." });
+      return res.status(500).json({ error: getOtpEmailErrorMessage(error) });
     }
 
     return res.json({ message: "OTP sent" });

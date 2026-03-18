@@ -81,11 +81,6 @@ export default function LoginPage() {
                 </label>
                 {admin.error && <p className="error-text">{admin.error}</p>}
                 {admin.info && <p className="info-text">{admin.info}</p>}
-                {admin.devCode && (
-                  <p className="auth-dev-code">
-                    Dev OTP: <strong>{admin.devCode}</strong>
-                  </p>
-                )}
                 <div className="auth-actions">
                   <button className="btn btn-primary" type="submit" disabled={admin.loading}>
                     {admin.loading ? "Verifying..." : "Verify & Login"}
@@ -159,11 +154,6 @@ export default function LoginPage() {
                 </label>
                 {user.error && <p className="error-text">{user.error}</p>}
                 {user.info && <p className="info-text">{user.info}</p>}
-                {user.devCode && (
-                  <p className="auth-dev-code">
-                    Dev OTP: <strong>{user.devCode}</strong>
-                  </p>
-                )}
                 <div className="auth-actions">
                   <button className="btn btn-primary" type="submit" disabled={user.loading}>
                     {user.loading ? "Verifying..." : "Verify & Login"}

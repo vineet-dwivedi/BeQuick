@@ -86,7 +86,6 @@ export function AuthProvider({ children }) {
 
       return {
         ok: true,
-        devCode: data?.devCode || "",
         cooldown: Boolean(data?.cooldown),
         message: data?.message || "OTP sent to your email."
       };

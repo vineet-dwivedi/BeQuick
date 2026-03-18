@@ -15,7 +15,6 @@ export const useLoginState = () => {
   const [adminLoading, setAdminLoading] = useState(false);
   const [adminError, setAdminError] = useState("");
   const [adminInfo, setAdminInfo] = useState("");
-  const [adminDevCode, setAdminDevCode] = useState("");
 
   const [userStep, setUserStep] = useState("email");
   const [userEmail, setUserEmail] = useState("");
@@ -23,7 +22,6 @@ export const useLoginState = () => {
   const [userLoading, setUserLoading] = useState(false);
   const [userError, setUserError] = useState("");
   const [userInfo, setUserInfo] = useState("");
-  const [userDevCode, setUserDevCode] = useState("");
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -39,7 +37,6 @@ export const useLoginState = () => {
     setAdminCode("");
     setAdminError("");
     setAdminInfo("");
-    setAdminDevCode("");
   };
 
   const resetUser = () => {
@@ -47,13 +44,11 @@ export const useLoginState = () => {
     setUserCode("");
     setUserError("");
     setUserInfo("");
-    setUserDevCode("");
   };
 
   const handleAdminRequestOtp = async () => {
     setAdminError("");
     setAdminInfo("");
-    setAdminDevCode("");
     setAdminLoading(true);
 
     const result = await requestOtp(ADMIN_EMAIL);
@@ -66,9 +61,6 @@ export const useLoginState = () => {
 
     setAdminStep("code");
     setAdminInfo(result.cooldown ? "OTP already sent. Check your inbox." : result.message);
-    if (result.devCode) {
-      setAdminDevCode(result.devCode);
-    }
   };
 
   const handleAdminVerifyOtp = async () => {
@@ -102,7 +94,6 @@ export const useLoginState = () => {
 
     setUserError("");
     setUserInfo("");
-    setUserDevCode("");
     setUserLoading(true);
 
     const result = await requestOtp(userEmail);
@@ -115,9 +106,6 @@ export const useLoginState = () => {
 
     setUserStep("code");
     setUserInfo(result.cooldown ? "OTP already sent. Check your inbox." : result.message);
-    if (result.devCode) {
-      setUserDevCode(result.devCode);
-    }
   };
 
   const handleUserVerifyOtp = async () => {
@@ -154,7 +142,6 @@ export const useLoginState = () => {
       loading: adminLoading,
       error: adminError,
       info: adminInfo,
-      devCode: adminDevCode,
       setCode: setAdminCode,
       requestOtp: handleAdminRequestOtp,
       verifyOtp: handleAdminVerifyOtp,
@@ -167,7 +154,6 @@ export const useLoginState = () => {
       loading: userLoading,
       error: userError,
       info: userInfo,
-      devCode: userDevCode,
       setEmail: setUserEmail,
       setCode: setUserCode,
       requestOtp: handleUserRequestOtp,
