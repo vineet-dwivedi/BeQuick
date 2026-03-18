@@ -32,7 +32,15 @@ npm install
 cd ..\client
 npm install
 ```
-2. Configure environment by copying `Backend/.env.example` to `Backend/.env` and updating the values.
+2. Configure environment:
+```
+# Backend
+copy Backend\.env.example Backend\.env
+
+# Frontend (for production builds / separate frontend deployment)
+copy client\.env.example client\.env
+```
+Update the copied env files with your real values.
 3. Start services
 ```
 # Backend API
@@ -60,12 +68,13 @@ CRAWL_TIMEZONE=Asia/Kolkata
 **Environment**
 - `MONGO_URI` MongoDB connection string
 - `JWT_SECRET` JWT secret
-- `CORS_ORIGIN` Frontend URL
+- `CORS_ORIGIN` Frontend URL or comma-separated list of allowed frontend URLs
 - `REDIS_URL` Redis connection string for the crawl queue
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` for OTP mail
 - `OTP_TTL_SECONDS`, `OTP_COOLDOWN_SECONDS`, `OTP_MAX_ATTEMPTS`, `OTP_DEV_MODE`
 - `GEMINI_API_KEY`, `GEMINI_MODEL` (optional)
 - `PRIORITY_COMPANIES` default fallback companies
+- `VITE_API_URL` frontend-only env that should point to your deployed backend origin for production builds
 
 **Admin Access**
 - Frontend admin email is set in `client/src/pages/Login/state/loginConstants.js`
@@ -92,3 +101,8 @@ CRAWL_TIMEZONE=Asia/Kolkata
 - Redis must be running for the crawler queue.
 - If `OTP_DEV_MODE=true`, the backend returns a dev OTP in the response.
 - Vite dev server proxies `/api` to `http://localhost:4000`.
+
+**Deployment Notes**
+- If the frontend and backend are deployed on different domains, set `client/.env` or your hosting provider env with `VITE_API_URL=https://your-backend-domain.com` before building the client.
+- Set backend `CORS_ORIGIN` to the exact deployed frontend URL. Multiple origins can be comma-separated.
+- The frontend uses `BrowserRouter`, so static hosting also needs an SPA rewrite that serves `index.html` for app routes like `/login` or `/admin`.
