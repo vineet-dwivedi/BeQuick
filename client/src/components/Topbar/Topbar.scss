@@ -25,20 +25,19 @@ body[data-theme="alt"] .topbar {
   max-width: 100%;
 
   &__mark {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     display: grid;
     place-items: center;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: color-mix(in srgb, var(--surface-elevated) 90%, transparent);
+    flex: 0 0 42px;
+    border-radius: 999px;
+    overflow: hidden;
   }
 
-  &__dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-    background: var(--accent);
+  &__icon {
+    width: 100%;
+    height: 100%;
+    display: block;
   }
 
   &__copy {

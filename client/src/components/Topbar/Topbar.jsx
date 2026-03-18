@@ -12,7 +12,7 @@ export default function Topbar() {
     <header className="topbar">
       <Link className="brand" to="/">
         <span className="brand__mark" aria-hidden="true">
-          <span className="brand__dot" />
+          <img className="brand__icon" src="/favicon.svg?v=5" alt="" />
         </span>
         <span className="brand__copy">
           <strong>BeQuick Elite</strong>
