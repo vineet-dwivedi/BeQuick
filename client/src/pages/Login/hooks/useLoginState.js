@@ -2,26 +2,27 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import { useAuth } from "../../../services/auth.jsx";
-import { ADMIN_EMAIL } from "../state/loginConstants.js";
 
 export const useLoginState = () => {
   const pageRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { verifyOtp, requestOtp, logout } = useAuth();
+  const { login, logout, register, resendVerification } = useAuth();
 
-  const [adminStep, setAdminStep] = useState("email");
-  const [adminCode, setAdminCode] = useState("");
-  const [adminLoading, setAdminLoading] = useState(false);
-  const [adminError, setAdminError] = useState("");
-  const [adminInfo, setAdminInfo] = useState("");
+  const [signupName, setSignupName] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupLoading, setSignupLoading] = useState(false);
+  const [signupError, setSignupError] = useState("");
+  const [signupInfo, setSignupInfo] = useState("");
 
-  const [userStep, setUserStep] = useState("email");
-  const [userEmail, setUserEmail] = useState("");
-  const [userCode, setUserCode] = useState("");
-  const [userLoading, setUserLoading] = useState(false);
-  const [userError, setUserError] = useState("");
-  const [userInfo, setUserInfo] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [loginInfo, setLoginInfo] = useState("");
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -32,98 +33,51 @@ export const useLoginState = () => {
     return () => ctx.revert();
   }, []);
 
-  const resetAdmin = () => {
-    setAdminStep("email");
-    setAdminCode("");
-    setAdminError("");
-    setAdminInfo("");
-  };
+  const handleSignup = async () => {
+    setSignupError("");
+    setSignupInfo("");
+    setSignupLoading(true);
 
-  const resetUser = () => {
-    setUserStep("email");
-    setUserCode("");
-    setUserError("");
-    setUserInfo("");
-  };
+    const result = await register({
+      user: signupName,
+      email: signupEmail,
+      password: signupPassword
+    });
 
-  const handleAdminRequestOtp = async () => {
-    setAdminError("");
-    setAdminInfo("");
-    setAdminLoading(true);
-
-    const result = await requestOtp(ADMIN_EMAIL);
-    setAdminLoading(false);
+    setSignupLoading(false);
 
     if (!result.ok) {
-      setAdminError(result.error || "Failed to send OTP");
+      setSignupError(result.error || "Failed to create account");
       return;
     }
 
-    setAdminStep("code");
-    setAdminInfo(result.cooldown ? "OTP already sent. Check your inbox." : result.message);
+    const normalizedEmail = signupEmail.trim().toLowerCase();
+    setSignupInfo(result.message);
+    setLoginEmail(normalizedEmail);
+    setLoginInfo("Verify your email first, then log in here.");
+    setNeedsVerification(true);
+    setSignupPassword("");
   };
 
-  const handleAdminVerifyOtp = async () => {
-    setAdminError("");
-    setAdminInfo("");
-    setAdminLoading(true);
+  const handleLogin = async () => {
+    setLoginError("");
+    setLoginInfo("");
+    setNeedsVerification(false);
+    setLoginLoading(true);
 
-    const result = await verifyOtp(ADMIN_EMAIL, adminCode);
-    setAdminLoading(false);
+    const result = await login({
+      email: loginEmail,
+      password: loginPassword
+    });
 
-    if (!result.ok) {
-      setAdminError(result.error || "OTP verification failed");
-      return;
-    }
-
-    if (result.user?.role !== "admin") {
-      setAdminError("This email is not configured as admin.");
-      await logout();
-      return;
-    }
-
-    navigate("/admin", { replace: true });
-  };
-
-  const handleUserRequestOtp = async () => {
-    const normalized = userEmail.trim().toLowerCase();
-    if (normalized === ADMIN_EMAIL) {
-      setUserError("Use the admin login section for this email.");
-      return;
-    }
-
-    setUserError("");
-    setUserInfo("");
-    setUserLoading(true);
-
-    const result = await requestOtp(userEmail);
-    setUserLoading(false);
+    setLoginLoading(false);
 
     if (!result.ok) {
-      setUserError(result.error || "Failed to send OTP");
-      return;
-    }
-
-    setUserStep("code");
-    setUserInfo(result.cooldown ? "OTP already sent. Check your inbox." : result.message);
-  };
-
-  const handleUserVerifyOtp = async () => {
-    const normalized = userEmail.trim().toLowerCase();
-    if (normalized === ADMIN_EMAIL) {
-      setUserError("Use the admin login section for this email.");
-      return;
-    }
-
-    setUserError("");
-    setUserInfo("");
-    setUserLoading(true);
-
-    const result = await verifyOtp(userEmail, userCode);
-    setUserLoading(false);
-
-    if (!result.ok) {
-      setUserError(result.error || "OTP verification failed");
+      setLoginError(result.error || "Login failed");
+      setNeedsVerification(Boolean(result.requiresVerification));
+      if (result.requiresVerification) {
+        setLoginInfo("Open the verification link from your inbox, or resend it below.");
+      }
       return;
     }
 
@@ -133,32 +87,58 @@ export const useLoginState = () => {
     navigate(target, { replace: true });
   };
 
+  const handleResendVerification = async () => {
+    const emailToUse = loginEmail || signupEmail;
+    setLoginError("");
+    setLoginInfo("");
+    setResendLoading(true);
+
+    const result = await resendVerification(emailToUse);
+    setResendLoading(false);
+
+    if (!result.ok) {
+      setLoginError(result.error || "Failed to resend verification email");
+      return;
+    }
+
+    setLoginInfo(result.message);
+  };
+
+  const handleResetLogin = async () => {
+    setLoginPassword("");
+    setLoginError("");
+    setLoginInfo("");
+    setNeedsVerification(false);
+    await logout();
+  };
+
   return {
     pageRef,
-    adminEmail: ADMIN_EMAIL,
-    admin: {
-      step: adminStep,
-      code: adminCode,
-      loading: adminLoading,
-      error: adminError,
-      info: adminInfo,
-      setCode: setAdminCode,
-      requestOtp: handleAdminRequestOtp,
-      verifyOtp: handleAdminVerifyOtp,
-      reset: resetAdmin
+    signup: {
+      name: signupName,
+      email: signupEmail,
+      password: signupPassword,
+      loading: signupLoading,
+      error: signupError,
+      info: signupInfo,
+      setName: setSignupName,
+      setEmail: setSignupEmail,
+      setPassword: setSignupPassword,
+      submit: handleSignup
     },
-    user: {
-      step: userStep,
-      email: userEmail,
-      code: userCode,
-      loading: userLoading,
-      error: userError,
-      info: userInfo,
-      setEmail: setUserEmail,
-      setCode: setUserCode,
-      requestOtp: handleUserRequestOtp,
-      verifyOtp: handleUserVerifyOtp,
-      reset: resetUser
+    signin: {
+      email: loginEmail,
+      password: loginPassword,
+      loading: loginLoading,
+      error: loginError,
+      info: loginInfo,
+      needsVerification,
+      resendLoading,
+      setEmail: setLoginEmail,
+      setPassword: setLoginPassword,
+      submit: handleLogin,
+      resendVerification: handleResendVerification,
+      reset: handleResetLogin
     }
   };
 };

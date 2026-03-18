@@ -26,14 +26,14 @@ This file explains both the backend and frontend in simple language.
 - `Backend/src/server.js` loads env, connects DB, starts API, and starts scheduler.
 - `Backend/src/app.js` sets up middleware and mounts routes.
 
-**Auth (OTP)**
-- `POST /api/auth/request-otp` sends an OTP to email.
-- `POST /api/auth/verify-otp` verifies OTP and returns a token.
-- `OTP_DEV_MODE=true` makes the API return a dev OTP in the response.
+**Auth (Email + Password)**
+- `POST /api/auth/register` creates an account and sends a verification link.
+- `POST /api/auth/verify-email` verifies the email token from that link.
+- `POST /api/auth/login` logs in only after the email is verified.
+- `POST /api/auth/resend-verification` sends a fresh verification link.
 
 **Admin Access**
 - Admin is controlled by the user role in MongoDB.
-- Frontend admin email is set in `client/src/pages/Login/state/loginConstants.js`.
 - Admin-only routes use `requireAdmin` in `Backend/src/middlewares/auth.middleware.js`.
 
 **Search Controller**
@@ -69,7 +69,8 @@ CRAWL_TIMEZONE=Asia/Kolkata
 
 **Frontend Pages**
 - `Home` shows prompt search, signals, and results.
-- `Login` shows admin and member OTP flows.
+- `Login` shows signup and login forms for verified email/password access.
+- `VerifyEmail` activates accounts from verification links.
 - `Admin` shows sources CRUD, jobs, companies, and crawl controls.
 - `NotFound` handles 404.
 
@@ -87,8 +88,9 @@ CRAWL_TIMEZONE=Asia/Kolkata
 
 **Environment (Backend)**
 - `MONGO_URI`, `JWT_SECRET`, `CORS_ORIGIN` are required.
+- `APP_URL` should point to the frontend so verification links open the correct page.
+- `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` are required for verification email.
 - `REDIS_URL` is required for the crawler queue.
-- `SMTP_*` values are required for OTP email.
 
 **Useful Scripts**
 - `npm run dev` start backend API

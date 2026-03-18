@@ -11,11 +11,10 @@ export const loginSchema = z.object({
   password: z.string().min(6)
 });
 
-export const requestOtpSchema = z.object({
+export const resendVerificationSchema = z.object({
   email: z.string().email()
 });
 
-export const verifyOtpSchema = z.object({
-  email: z.string().email(),
-  code: z.string().min(4).max(8)
+export const verifyEmailSchema = z.object({
+  token: z.string().min(20)
 });

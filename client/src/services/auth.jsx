@@ -5,6 +5,17 @@ const AuthContext = createContext(null);
 
 const getStoredToken = () => window.localStorage.getItem("auth_token") || "";
 
+async function readJson(response) {
+  const text = await response.text();
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {};
+  }
+}
+
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(getStoredToken);
   const [user, setUser] = useState(null);
@@ -22,11 +33,12 @@ export function AuthProvider({ children }) {
   const fetchMe = useCallback(
     async (authToken) => {
       if (!authToken) return null;
+
       try {
         const response = await fetch(buildApiUrl("/api/auth/me"), {
           headers: { Authorization: `Bearer ${authToken}` }
         });
-        const data = await response.json();
+        const data = await readJson(response);
 
         if (response.ok) {
           setUser(data.user);
@@ -66,73 +78,146 @@ export function AuthProvider({ children }) {
     };
   }, [token, fetchMe]);
 
-  const requestOtp = useCallback(async (email) => {
+  const register = useCallback(async ({ user: name, email, password }) => {
+    const normalizedName = String(name || "").trim();
     const normalizedEmail = String(email || "").trim();
-    if (!normalizedEmail) {
-      return { ok: false, error: "Please enter a valid email." };
+    const normalizedPassword = String(password || "");
+
+    if (!normalizedName || !normalizedEmail || !normalizedPassword) {
+      return { ok: false, error: "Name, email, and password are required." };
     }
 
     try {
-      const response = await fetch(buildApiUrl("/api/auth/request-otp"), {
+      const response = await fetch(buildApiUrl("/api/auth/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail })
+        body: JSON.stringify({
+          user: normalizedName,
+          email: normalizedEmail,
+          password: normalizedPassword
+        })
       });
-      const data = await response.json();
+      const data = await readJson(response);
 
       if (!response.ok) {
-        throw new Error(data?.error || "Failed to send OTP");
+        throw new Error(data?.error || "Failed to create account");
       }
 
       return {
         ok: true,
-        cooldown: Boolean(data?.cooldown),
-        message: data?.message || "OTP sent to your email."
+        message: data?.message || "Account created. Check your email to verify your account."
       };
     } catch (error) {
       return {
         ok: false,
-        error: error?.message || "Failed to send OTP"
+        error: error?.message || "Failed to create account"
       };
     }
   }, []);
 
-  const verifyOtp = useCallback(
-    async (email, code) => {
+  const login = useCallback(
+    async ({ email, password }) => {
       const normalizedEmail = String(email || "").trim();
-      const cleanedCode = String(code || "").replace(/\s+/g, "");
+      const normalizedPassword = String(password || "");
 
-      if (!normalizedEmail || !cleanedCode) {
-        return { ok: false, error: "Enter the code sent to your email." };
+      if (!normalizedEmail || !normalizedPassword) {
+        return { ok: false, error: "Email and password are required." };
       }
 
       try {
-        const response = await fetch(buildApiUrl("/api/auth/verify-otp"), {
+        const response = await fetch(buildApiUrl("/api/auth/login"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: normalizedEmail,
-            code: cleanedCode
+            password: normalizedPassword
           })
         });
-        const data = await response.json();
+        const data = await readJson(response);
 
         if (!response.ok) {
-          throw new Error(data?.error || "OTP verification failed");
+          return {
+            ok: false,
+            requiresVerification: Boolean(data?.requiresVerification),
+            error: data?.error || "Login failed"
+          };
         }
 
         persistToken(data.token);
         setUser(data.user);
+
         return { ok: true, user: data.user };
       } catch (error) {
         return {
           ok: false,
-          error: error?.message || "OTP verification failed"
+          error: error?.message || "Login failed"
         };
       }
     },
     [persistToken]
   );
+
+  const resendVerification = useCallback(async (email) => {
+    const normalizedEmail = String(email || "").trim();
+
+    if (!normalizedEmail) {
+      return { ok: false, error: "Enter the email you used when signing up." };
+    }
+
+    try {
+      const response = await fetch(buildApiUrl("/api/auth/resend-verification"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail })
+      });
+      const data = await readJson(response);
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to resend verification email");
+      }
+
+      return {
+        ok: true,
+        message: data?.message || "Verification link sent."
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error?.message || "Failed to resend verification email"
+      };
+    }
+  }, []);
+
+  const verifyEmail = useCallback(async (tokenToVerify) => {
+    const normalizedToken = String(tokenToVerify || "").trim();
+
+    if (!normalizedToken) {
+      return { ok: false, error: "Verification token is missing." };
+    }
+
+    try {
+      const response = await fetch(buildApiUrl("/api/auth/verify-email"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: normalizedToken })
+      });
+      const data = await readJson(response);
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Verification failed");
+      }
+
+      return {
+        ok: true,
+        message: data?.message || "Email verified. You can log in now."
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error?.message || "Verification failed"
+      };
+    }
+  }, []);
 
   const logout = useCallback(async () => {
     try {
@@ -155,11 +240,13 @@ export function AuthProvider({ children }) {
       user,
       token,
       bootstrapped,
-      requestOtp,
-      verifyOtp,
+      register,
+      login,
+      resendVerification,
+      verifyEmail,
       logout
     }),
-    [user, token, bootstrapped, requestOtp, verifyOtp, logout]
+    [user, token, bootstrapped, register, login, resendVerification, verifyEmail, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

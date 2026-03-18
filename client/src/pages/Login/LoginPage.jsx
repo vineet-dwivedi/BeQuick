@@ -1,7 +1,7 @@
 import { useLoginState } from "./hooks/useLoginState.js";
 
 export default function LoginPage() {
-  const { pageRef, adminEmail, admin, user } = useLoginState();
+  const { pageRef, signup, signin } = useLoginState();
 
   return (
     <div className="page page-login" ref={pageRef}>
@@ -10,10 +10,14 @@ export default function LoginPage() {
           <p className="eyebrow">Secure access</p>
           <h1>Welcome to BeQuick Elite</h1>
           <p>
-            Sign in with a one-time code to unlock curated job intelligence, hiring signals,
-            and stack-level insights.
+            Create an account with your email and password, verify it from your inbox,
+            and unlock curated job intelligence with clean session-based access.
           </p>
           <div className="login-stats">
+            <div>
+              <h3>1 Click</h3>
+              <p>Verification link activation</p>
+            </div>
             <div>
               <h3>24/7</h3>
               <p>Live crawl coverage</p>
@@ -23,151 +27,132 @@ export default function LoginPage() {
               <p>Roles tracked weekly</p>
             </div>
           </div>
+          <div className="login-note">
+            <p>
+              Admins use the same login form and are routed to the admin panel automatically
+              based on their role.
+            </p>
+          </div>
         </div>
 
         <div className="login-cards">
-          <div className="login-card admin">
+          <div className="login-card login-card--highlight">
             <div>
-              <p className="eyebrow">Admin access</p>
-              <h2>{admin.step === "email" ? "Admin login" : "Enter admin OTP"}</h2>
-              <p>
-                {admin.step === "email"
-                  ? "This section is locked to the primary admin email."
-                  : `Code sent to ${adminEmail}`}
-              </p>
+              <p className="eyebrow">Create account</p>
+              <h2>Sign up with a real email</h2>
+              <p>We will send a verification link before your account can log in.</p>
             </div>
 
-            {admin.step === "email" ? (
-              <form
-                className="auth-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  admin.requestOtp();
-                }}
-              >
-                <label className="form-field">
-                  Admin email
-                  <input
-                    className="auth-input is-locked"
-                    type="email"
-                    value={adminEmail}
-                    readOnly
-                  />
-                </label>
-                {admin.error && <p className="error-text">{admin.error}</p>}
-                {admin.info && <p className="info-text">{admin.info}</p>}
-                <button className="btn btn-primary" type="submit" disabled={admin.loading}>
-                  {admin.loading ? "Sending..." : "Send OTP"}
-                </button>
-              </form>
-            ) : (
-              <form
-                className="auth-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  admin.verifyOtp();
-                }}
-              >
-                <label className="form-field">
-                  Enter 6-digit code
-                  <input
-                    className="auth-input"
-                    type="text"
-                    value={admin.code}
-                    onChange={(event) => admin.setCode(event.target.value)}
-                    placeholder="000000"
-                    required
-                  />
-                </label>
-                {admin.error && <p className="error-text">{admin.error}</p>}
-                {admin.info && <p className="info-text">{admin.info}</p>}
-                <div className="auth-actions">
-                  <button className="btn btn-primary" type="submit" disabled={admin.loading}>
-                    {admin.loading ? "Verifying..." : "Verify & Login"}
-                  </button>
-                  <button
-                    className="btn btn-ghost"
-                    type="button"
-                    onClick={admin.reset}
-                  >
-                    Back
-                  </button>
-                </div>
-              </form>
-            )}
+            <form
+              className="auth-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                signup.submit();
+              }}
+            >
+              <label className="form-field">
+                Full name
+                <input
+                  className="auth-input"
+                  type="text"
+                  value={signup.name}
+                  onChange={(event) => signup.setName(event.target.value)}
+                  placeholder="Vineet Dwivedi"
+                  autoComplete="name"
+                  required
+                />
+              </label>
+              <label className="form-field">
+                Email address
+                <input
+                  className="auth-input"
+                  type="email"
+                  value={signup.email}
+                  onChange={(event) => signup.setEmail(event.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  required
+                />
+              </label>
+              <label className="form-field">
+                Password
+                <input
+                  className="auth-input"
+                  type="password"
+                  value={signup.password}
+                  onChange={(event) => signup.setPassword(event.target.value)}
+                  placeholder="Create a password"
+                  autoComplete="new-password"
+                  required
+                />
+              </label>
+              {signup.error && <p className="error-text">{signup.error}</p>}
+              {signup.info && <p className="info-text">{signup.info}</p>}
+              <button className="btn btn-primary" type="submit" disabled={signup.loading}>
+                {signup.loading ? "Creating..." : "Create Account"}
+              </button>
+            </form>
           </div>
 
           <div className="login-card">
             <div>
-              <p className="eyebrow">Member access</p>
-              <h2>{user.step === "email" ? "Login with email" : "Enter OTP code"}</h2>
-              <p>
-                {user.step === "email"
-                  ? "We will send a one-time code to your inbox."
-                  : `Code sent to ${user.email}`}
-              </p>
+              <p className="eyebrow">Login</p>
+              <h2>Sign in with your password</h2>
+              <p>Use your verified email and password to continue.</p>
             </div>
 
-            {user.step === "email" ? (
-              <form
-                className="auth-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  user.requestOtp();
-                }}
-              >
-                <label className="form-field">
-                  Work email
-                  <input
-                    className="auth-input"
-                    type="email"
-                    value={user.email}
-                    onChange={(event) => user.setEmail(event.target.value)}
-                    placeholder="you@company.com"
-                    required
-                  />
-                </label>
-                {user.error && <p className="error-text">{user.error}</p>}
-                {user.info && <p className="info-text">{user.info}</p>}
-                <button className="btn btn-primary" type="submit" disabled={user.loading}>
-                  {user.loading ? "Sending..." : "Send OTP"}
+            <form
+              className="auth-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                signin.submit();
+              }}
+            >
+              <label className="form-field">
+                Email address
+                <input
+                  className="auth-input"
+                  type="email"
+                  value={signin.email}
+                  onChange={(event) => signin.setEmail(event.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  required
+                />
+              </label>
+              <label className="form-field">
+                Password
+                <input
+                  className="auth-input"
+                  type="password"
+                  value={signin.password}
+                  onChange={(event) => signin.setPassword(event.target.value)}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
+              {signin.error && <p className="error-text">{signin.error}</p>}
+              {signin.info && <p className="info-text">{signin.info}</p>}
+              <div className="auth-actions">
+                <button className="btn btn-primary" type="submit" disabled={signin.loading}>
+                  {signin.loading ? "Signing in..." : "Login"}
                 </button>
-              </form>
-            ) : (
-              <form
-                className="auth-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  user.verifyOtp();
-                }}
-              >
-                <label className="form-field">
-                  Enter 6-digit code
-                  <input
-                    className="auth-input"
-                    type="text"
-                    value={user.code}
-                    onChange={(event) => user.setCode(event.target.value)}
-                    placeholder="000000"
-                    required
-                  />
-                </label>
-                {user.error && <p className="error-text">{user.error}</p>}
-                {user.info && <p className="info-text">{user.info}</p>}
-                <div className="auth-actions">
-                  <button className="btn btn-primary" type="submit" disabled={user.loading}>
-                    {user.loading ? "Verifying..." : "Verify & Login"}
-                  </button>
+                {signin.needsVerification && (
                   <button
                     className="btn btn-ghost"
                     type="button"
-                    onClick={user.reset}
+                    onClick={signin.resendVerification}
+                    disabled={signin.resendLoading}
                   >
-                    Change email
+                    {signin.resendLoading ? "Sending..." : "Resend Verification Link"}
                   </button>
-                </div>
-              </form>
-            )}
+                )}
+                <button className="btn btn-ghost" type="button" onClick={signin.reset}>
+                  Reset
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </section>

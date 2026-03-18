@@ -1,1 +1,0 @@
-export const ADMIN_EMAIL = "vineetdwi17@gmail.com";
