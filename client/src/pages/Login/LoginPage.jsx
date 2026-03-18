@@ -13,7 +13,7 @@ export default function LoginPage() {
           </div>
           <p className="eyebrow">Secure access</p>
           <h1>Access the BeQuick command deck</h1>
-          <p>
+          <p className="login-panel__lead">
             Sign in with Google to explore verified hiring intelligence across software,
             data, AI, cloud, security, product, design, and every other tech lane the
             platform tracks.
@@ -50,7 +50,7 @@ export default function LoginPage() {
 
         <div className="login-cards">
           <div className="login-card login-card--highlight">
-            <div>
+            <div className="login-card__header">
               <p className="eyebrow">Google Sign-In</p>
               <h2>Continue with Google</h2>
               <p>
@@ -60,16 +60,22 @@ export default function LoginPage() {
             </div>
 
             <div className="google-auth-slot">
-              <div className="google-auth-slot__button" ref={googleButtonRef} />
+              <div className="google-auth-slot__shell">
+                <div className="google-auth-slot__button" ref={googleButtonRef} />
+              </div>
             </div>
 
-            {loading && <p className="info-text">Signing you in...</p>}
-            {error && <p className="error-text">{error}</p>}
-            {info && <p className="info-text">{info}</p>}
+            {(loading || error || info) && (
+              <div className="login-feedback">
+                {loading && <p className="info-text">Signing you in...</p>}
+                {error && <p className="error-text">{error}</p>}
+                {info && <p className="info-text">{info}</p>}
+              </div>
+            )}
           </div>
 
           <div className="login-card">
-            <div>
+            <div className="login-card__header">
               <p className="eyebrow">Why this flow</p>
               <h2>No OTP friction, cleaner entry</h2>
               <p>

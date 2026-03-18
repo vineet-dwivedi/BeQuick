@@ -102,9 +102,14 @@ export function AuthProvider({ children }) {
 
         return { ok: true, user: data.user };
       } catch (error) {
+        const message =
+          error?.message === "Failed to fetch"
+            ? "Unable to reach the server. Check that the backend is running and the API URL is correct."
+            : error?.message || "Google login failed";
+
         return {
           ok: false,
-          error: error?.message || "Google login failed"
+          error: message
         };
       }
     },

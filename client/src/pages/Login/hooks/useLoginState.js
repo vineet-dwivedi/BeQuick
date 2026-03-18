@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import { useAuth } from "../../../services/auth.jsx";
+import { useTheme } from "../../../services/theme.jsx";
 
 const GOOGLE_SCRIPT_ID = "google-identity-services";
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
@@ -37,6 +38,7 @@ export const useLoginState = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { loginWithGoogle } = useAuth();
+  const { theme } = useTheme();
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,6 +54,27 @@ export const useLoginState = () => {
 
   useEffect(() => {
     let active = true;
+    let resizeObserver;
+
+    const renderGoogleButton = () => {
+      if (!googleButtonRef.current || !window.google?.accounts?.id) return;
+
+      const buttonWidth = Math.max(
+        220,
+        Math.floor(googleButtonRef.current.getBoundingClientRect().width || 0)
+      );
+      const isCompact = buttonWidth < 320;
+
+      googleButtonRef.current.innerHTML = "";
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: theme === "alt" ? "outline" : "filled_black",
+        size: isCompact ? "medium" : "large",
+        shape: "rectangular",
+        text: isCompact ? "signin_with" : "continue_with",
+        logo_alignment: "left",
+        width: buttonWidth
+      });
+    };
 
     const initializeGoogle = async () => {
       if (!googleClientId) {
@@ -93,14 +116,15 @@ export const useLoginState = () => {
         }
       });
 
-      googleButtonRef.current.innerHTML = "";
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        theme: "outline",
-        size: "large",
-        shape: "pill",
-        text: "continue_with",
-        width: googleButtonRef.current.offsetWidth || 320
-      });
+      renderGoogleButton();
+
+      if (typeof window.ResizeObserver !== "undefined" && googleButtonRef.current) {
+        resizeObserver = new window.ResizeObserver(() => {
+          renderGoogleButton();
+        });
+        resizeObserver.observe(googleButtonRef.current);
+      }
+
       setInfo("Use the Google account you want linked to your BeQuick profile.");
     };
 
@@ -108,8 +132,9 @@ export const useLoginState = () => {
 
     return () => {
       active = false;
+      resizeObserver?.disconnect();
     };
-  }, [location.state?.from?.pathname, loginWithGoogle, navigate]);
+  }, [location.state?.from?.pathname, loginWithGoogle, navigate, theme]);
 
   return {
     pageRef,
