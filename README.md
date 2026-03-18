@@ -106,4 +106,5 @@ CRAWL_TIMEZONE=Asia/Kolkata
 - If the frontend and backend are deployed on different domains, set `client/.env` or your hosting provider env with `VITE_API_URL=https://your-backend-domain.com` before building the client.
 - Set backend `CORS_ORIGIN` to the exact deployed frontend URL. Multiple origins can be comma-separated.
 - The frontend uses `BrowserRouter`, so static hosting also needs an SPA rewrite that serves `index.html` for app routes like `/login` or `/admin`.
+- For Vercel deployments, add a `vercel.json` rewrite so routes like `/login` and `/admin` resolve to `index.html` instead of Vercel's `404 NOT_FOUND` page.
 - For Gmail SMTP on deployed hosts, port `587` with `SMTP_SECURE=false` is usually more reliable than port `465`.
