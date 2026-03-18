@@ -24,8 +24,24 @@ const shouldUseSameOriginProxy = () => {
   }
 };
 
+const getProductionApiConfigError = () => {
+  if (!import.meta.env.PROD || !shouldUseSameOriginProxy()) {
+    return "";
+  }
+
+  return (
+    "This deployed frontend is still configured with VITE_API_URL=localhost. " +
+    "Set VITE_API_URL to your public backend URL, then rebuild and redeploy the client."
+  );
+};
+
 export const buildApiUrl = (path) => {
   const normalizedPath = withLeadingSlash(path);
+  const productionApiConfigError = getProductionApiConfigError();
+
+  if (productionApiConfigError) {
+    throw new Error(productionApiConfigError);
+  }
 
   if (shouldUseSameOriginProxy()) {
     if (!warnedLocalhostApiFallback.value) {
