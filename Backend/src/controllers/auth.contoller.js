@@ -1,69 +1,18 @@
-import bcrypt from "bcrypt";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 import userModel from "../models/user.model.js";
-import { isEmailConfigured, sendVerificationEmail } from "../services/email.service.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
-const SALT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 10);
-const EMAIL_VERIFICATION_TTL_HOURS = Number(process.env.EMAIL_VERIFICATION_TTL_HOURS || 24);
+const googleClientIds = String(
+  process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_IDS || ""
+)
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
 
-const trimValue = (value) => (typeof value === "string" ? value.trim() : "");
-
-function normalizeEmail(value) {
-  return String(value || "").trim().toLowerCase();
-}
-
-function hashVerificationToken(token) {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
-
-function createVerificationToken() {
-  const token = crypto.randomBytes(32).toString("hex");
-  return {
-    token,
-    tokenHash: hashVerificationToken(token),
-    expiresAt: new Date(Date.now() + EMAIL_VERIFICATION_TTL_HOURS * 60 * 60 * 1000)
-  };
-}
-
-function getPublicAppUrl() {
-  const explicitAppUrl = trimValue(process.env.APP_URL);
-  if (explicitAppUrl) {
-    return explicitAppUrl.replace(/\/$/, "");
-  }
-
-  const allowedOrigins = String(process.env.CORS_ORIGIN || "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-
-  const preferredOrigin =
-    allowedOrigins.find((value) => !/localhost|127\.0\.0\.1/i.test(value)) ||
-    allowedOrigins[0] ||
-    "http://localhost:5173";
-
-  return preferredOrigin.replace(/\/$/, "");
-}
-
-function buildVerificationUrl(token) {
-  return `${getPublicAppUrl()}/verify-email?token=${encodeURIComponent(token)}`;
-}
-
-function getAuthEmailErrorMessage(error) {
-  const message = String(error?.message || "");
-
-  if (/api key|unauthorized|permission/i.test(message)) {
-    return "Email delivery is not configured correctly. Check your Brevo API key.";
-  }
-
-  if (/fetch failed|network|timed out|timeout/i.test(message)) {
-    return "Email delivery could not reach Brevo. Check your deploy host network access.";
-  }
-
-  return "Failed to send verification email. Check your Brevo configuration.";
-}
+const oauthClient = new OAuth2Client();
 
 function signToken(user) {
   return jwt.sign(
@@ -79,141 +28,81 @@ function toPublicUser(user) {
     user: user.user,
     email: user.email,
     role: user.role,
-    emailVerified: Boolean(user.emailVerified),
     createdAt: user.createdAt
   };
 }
 
-async function issueVerificationLink(user) {
-  const { token, tokenHash, expiresAt } = createVerificationToken();
-  user.emailVerificationTokenHash = tokenHash;
-  user.emailVerificationExpiresAt = expiresAt;
-  await user.save();
+function buildFallbackName(email, name) {
+  const trimmedName = String(name || "").trim();
+  if (trimmedName) return trimmedName;
 
-  await sendVerificationEmail({
-    email: user.email,
-    name: user.user,
-    verificationUrl: buildVerificationUrl(token)
-  });
+  const localPart = String(email || "").split("@")[0] || "user";
+  return localPart;
 }
 
-export async function register(req, res) {
-  const name = trimValue(req.body?.user);
-  const email = normalizeEmail(req.body?.email);
-  const password = String(req.body?.password || "");
+function buildPlaceholderPassword() {
+  return crypto.randomBytes(48).toString("hex");
+}
 
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: "user, email, and password are required" });
+async function verifyGoogleCredential(credential) {
+  if (!googleClientIds.length) {
+    throw new Error("Google auth is not configured. Set GOOGLE_CLIENT_ID on the backend.");
   }
 
-  if (!isEmailConfigured()) {
-    return res.status(500).json({
-      error: "Brevo is not configured. Set BREVO_API_KEY and sender settings first."
+  const ticket = await oauthClient.verifyIdToken({
+    idToken: credential,
+    audience: googleClientIds
+  });
+
+  return ticket.getPayload();
+}
+
+export async function googleLogin(req, res) {
+  const credential = String(req.body?.credential || "").trim();
+
+  if (!credential) {
+    return res.status(400).json({ error: "Google credential is required." });
+  }
+
+  let payload;
+
+  try {
+    payload = await verifyGoogleCredential(credential);
+  } catch (error) {
+    return res.status(401).json({ error: error?.message || "Google login failed." });
+  }
+
+  const googleSub = String(payload?.sub || "").trim();
+  const email = String(payload?.email || "").trim().toLowerCase();
+  const emailVerified = Boolean(payload?.email_verified);
+
+  if (!googleSub || !email || !emailVerified) {
+    return res.status(401).json({ error: "Google account email is not verified." });
+  }
+
+  const name = buildFallbackName(email, payload?.name);
+  let user = await userModel.findOne({
+    $or: [{ googleSub }, { email }]
+  });
+
+  if (user && user.googleSub && user.googleSub !== googleSub) {
+    return res.status(409).json({
+      error: "This email is already linked to a different Google account."
     });
   }
 
-  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-  const existing = await userModel.findOne({ email });
-
-  if (existing?.emailVerified) {
-    return res.status(409).json({ error: "Email already registered. Please log in." });
-  }
-
-  const account =
-    existing ||
-    new userModel({
+  if (!user) {
+    user = await userModel.create({
       user: name,
       email,
-      passwordHash
+      googleSub,
+      passwordHash: buildPlaceholderPassword()
     });
-
-  account.user = name;
-  account.passwordHash = passwordHash;
-  account.emailVerified = false;
-
-  try {
-    await issueVerificationLink(account);
-    return res.status(existing ? 200 : 201).json({
-      message: "Account created. Check your email for the verification link before logging in."
-    });
-  } catch (error) {
-    console.error("Verification email failed:", error?.message || error);
-    return res.status(500).json({ error: getAuthEmailErrorMessage(error) });
-  }
-}
-
-export async function resendVerificationEmail(req, res) {
-  const email = normalizeEmail(req.body?.email);
-  const account = await userModel.findOne({ email });
-
-  if (!account) {
-    return res.json({
-      message: "If an account exists for that email, a fresh verification link has been sent."
-    });
-  }
-
-  if (account.emailVerified) {
-    return res.json({ message: "This email is already verified. Please log in." });
-  }
-
-  if (!isEmailConfigured()) {
-    return res.status(500).json({
-      error: "Brevo is not configured. Set BREVO_API_KEY and sender settings first."
-    });
-  }
-
-  try {
-    await issueVerificationLink(account);
-    return res.json({
-      message: "Verification link sent. Check your inbox and open the link to activate your account."
-    });
-  } catch (error) {
-    console.error("Resend verification email failed:", error?.message || error);
-    return res.status(500).json({ error: getAuthEmailErrorMessage(error) });
-  }
-}
-
-export async function verifyEmail(req, res) {
-  const token = trimValue(req.body?.token);
-  const tokenHash = hashVerificationToken(token);
-
-  const account = await userModel.findOne({
-    emailVerificationTokenHash: tokenHash,
-    emailVerificationExpiresAt: { $gt: new Date() }
-  });
-
-  if (!account) {
-    return res.status(400).json({ error: "Verification link is invalid or expired." });
-  }
-
-  account.emailVerified = true;
-  account.emailVerificationTokenHash = null;
-  account.emailVerificationExpiresAt = null;
-  await account.save();
-
-  return res.json({ message: "Email verified. You can log in now." });
-}
-
-export async function login(req, res) {
-  const email = normalizeEmail(req.body?.email);
-  const password = String(req.body?.password || "");
-
-  if (!email || !password) {
-    return res.status(400).json({ error: "email and password are required" });
-  }
-
-  const user = await userModel.findOne({ email });
-  const passwordOk = user ? await bcrypt.compare(password, user.passwordHash) : false;
-
-  if (!user || !passwordOk) {
-    return res.status(401).json({ error: "Invalid email or password" });
-  }
-
-  if (!user.emailVerified) {
-    return res.status(403).json({
-      error: "Please verify your email before logging in.",
-      requiresVerification: true
-    });
+  } else {
+    user.user = name || user.user;
+    user.email = email;
+    user.googleSub = googleSub;
+    await user.save();
   }
 
   const token = signToken(user);

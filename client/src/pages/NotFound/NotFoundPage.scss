@@ -1,18 +1,48 @@
 @use "../../styles/tokens" as *;
 
 .notfound {
-  margin-top: 64px;
-  padding: 32px;
-  border-radius: $radius-xl;
+  max-width: 720px;
+  margin-top: 36px;
+  padding: 28px;
   background: var(--surface);
   border: 1px solid var(--border);
+  border-radius: $radius-xl;
   box-shadow: var(--shadow-soft);
-  max-width: 640px;
+
+  h1 {
+    margin: 14px 0;
+    font-size: clamp(2.4rem, 2rem + 0.9vw, 3rem);
+  }
+
+  > p:last-of-type {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.7;
+    max-width: 50ch;
+  }
 }
 
-@media (max-width: 550px) {
-  .notfound {
-    margin-top: 48px;
-    padding: 20px;
+.notfound__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  span {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
+}
+
+.notfound__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 22px;
 }

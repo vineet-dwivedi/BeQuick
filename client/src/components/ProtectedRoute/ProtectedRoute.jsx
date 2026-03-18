@@ -9,6 +9,10 @@ export default function ProtectedRoute() {
     return (
       <div className="page page-loading">
         <section className="loading-card">
+          <div className="loading-orbit" aria-hidden="true">
+            <span />
+            <span />
+          </div>
           <p className="eyebrow">Checking access</p>
           <h1>Securing your workspace</h1>
           <p>Verifying session and permissions.</p>

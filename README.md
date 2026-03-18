@@ -1,113 +1,240 @@
-**BeQuick Elite**
+## BeQuick Elite
 
-BeQuick Elite is a full-stack job intelligence platform that crawls verified sources, powers AI-assisted search, and provides an admin command center with verified email/password access. It ships with a modern React UI, light/dark theming, GSAP motion, and a crawler pipeline backed by Redis queues.
+BeQuick Elite is a full-stack job intelligence platform for discovering tech roles from verified sources. It combines a React frontend, an Express API, MongoDB storage, Redis-backed crawl jobs, optional Gemini-assisted prompt parsing, and an admin control panel for source operations.
 
-**Features**
-- AI-assisted job search with prompt parsing and priority-company fallback
-- Email/password signup with Brevo verification links
-- Admin command center for sources, jobs, companies, and crawl controls
-- Daily scheduled crawl with on-demand crawl triggering
-- Source pipeline to manage career pages and boards
-- GSAP-enhanced UI + Swiper highlights
-- Light and dark themes with protected routes
+## What The App Does
 
-**Tech Stack**
-- Frontend: React, Vite, SCSS, GSAP, Swiper
-- Backend: Node.js, Express, Mongoose, BullMQ, Redis, Brevo API
-- AI: Gemini structured output (optional, with fallback)
+- Search jobs with a free-text prompt such as `backend engineer`, `AI intern`, or a company name.
+- Surface live openings with cleaner context like location, remote mode, stack tags, and verified source links.
+- Show a polished home experience with light and dark themes plus subtle GSAP motion.
+- Use Google Sign-In for authentication and role-based admin access.
+- Let admins manage crawl sources, inspect jobs, export sources, and trigger priority crawls.
 
-**Repository Layout**
-- `Backend/` API server, worker, scheduler
-- `client/` React frontend
-- `explaintion.md` easy project walkthrough
+## Current Product Areas
 
-**Quick Start**
-1. Install dependencies
-```
-# Backend
+### User-facing frontend
+- Home page:
+  Minimal hero, search brief input, market snapshot, coverage sections, signal notes, live role board, and report modal.
+- Login page:
+  Google Sign-In flow only.
+- Admin page:
+  Source management, jobs monitor, and operational status.
+
+### Backend services
+- Search API for prompt-based job discovery.
+- Stats API for platform counters and crawl timestamps.
+- Source CRUD API for admin users.
+- Crawl queue + worker + scheduler.
+- Google-authenticated JWT session flow.
+
+## Tech Stack
+
+### Frontend
+- React 19
+- Vite
+- SCSS
+- GSAP
+- React Router
+
+### Backend
+- Node.js
+- Express
+- Mongoose
+- BullMQ
+- Redis
+- Zod
+- Google Auth Library
+
+### AI
+- Gemini via `@google/genai` when configured
+- Rule-based fallback when Gemini is unavailable
+
+## Repository Layout
+
+- `client/` frontend application
+- `Backend/` API server, crawlers, worker, scheduler, seeds
+- `README.md` setup + project overview
+- `explaintion.md` plain-language project walkthrough
+
+## Quick Start
+
+### 1. Install dependencies
+
+```powershell
 cd Backend
 npm install
 
-# Frontend
 cd ..\client
 npm install
 ```
-2. Configure environment:
-```
-# Backend
-copy Backend\.env.example Backend\.env
 
-# Frontend (for production builds / separate frontend deployment)
-copy client\.env.example client\.env
-```
-Update the copied env files with your real values.
-3. Start services
-```
-# Backend API
-cd Backend
-npm run dev
+### 2. Configure environment
 
-# Crawler worker (requires Redis)
-npm run worker
+Create env files for both apps:
 
-# Frontend UI
-cd ..\client
-npm run dev
+- `Backend/.env`
+- `client/.env`
+
+### 3. Minimum backend env
+
+```env
+MONGO_URI=
+JWT_SECRET=
+CORS_ORIGIN=http://localhost:5173
+GOOGLE_CLIENT_ID=
+REDIS_URL=
 ```
 
-**Scheduler**
-- The scheduler starts automatically with the backend server.
-- Default schedule: daily at 2:00 AM Asia/Kolkata.
-- Control via `.env`:
-```
+Optional backend env:
+
+```env
+JWT_EXPIRES_IN=7d
+GEMINI_API_KEY=
+GEMINI_MODEL=
+PRIORITY_COMPANIES=Google,Microsoft,Amazon
 SCHEDULER_ENABLED=true
 CRAWL_CRON=0 2 * * *
 CRAWL_TIMEZONE=Asia/Kolkata
 ```
 
-**Environment**
-- `MONGO_URI` MongoDB connection string
-- `JWT_SECRET` JWT secret
-- `CORS_ORIGIN` Frontend URL or comma-separated list of allowed frontend URLs
-- `APP_URL` public frontend URL used to build verification links
-- `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` for verification emails
-- `EMAIL_VERIFICATION_TTL_HOURS` verification link expiry window
-- `REDIS_URL` Redis connection string for the crawl queue
-- `GEMINI_API_KEY`, `GEMINI_MODEL` (optional)
-- `PRIORITY_COMPANIES` default fallback companies
-- `VITE_API_URL` frontend-only env that should point to your deployed backend origin for production builds
+### 4. Frontend env
 
-**Admin Access**
-- Admin users log in through the same email/password form
-- Admin role is stored in the database user document
+```env
+VITE_API_URL=http://localhost:4000
+VITE_GOOGLE_CLIENT_ID=
+```
 
-**Scripts**
-- `npm run worker` start crawl worker
-- `npm run schedule:once` enqueue a single crawl batch
+## Run The App
+
+### Backend API
+
+```powershell
+cd Backend
+npm run dev
+```
+
+### Crawl worker
+
+```powershell
+cd Backend
+npm run worker
+```
+
+### Frontend
+
+```powershell
+cd client
+npm run dev
+```
+
+## Useful Scripts
+
+### Backend
+- `npm run dev` start the API with nodemon
+- `npm run start` start the API normally
+- `npm run worker` start the BullMQ crawl worker
+- `npm run schedule` run the scheduler process
+- `npm run schedule:once` enqueue one crawl batch
 - `npm run seed` seed sample data
-- `npm run seed:sources` seed crawl sources
+- `npm run seed:sources` seed source records
+- `npm run cleanup:empty` remove empty companies
+- `npm run cleanup:companies` remove companies
 
-**API**
-- `POST /api/auth/register` create an account and send a verification link
-- `POST /api/auth/login` log in with email and password
-- `POST /api/auth/resend-verification` send a fresh verification link
-- `POST /api/auth/verify-email` verify an email token
-- `GET /api/search` or `POST /api/search` job search
-- `GET /api/stats` platform stats
-- `GET /api/sources` admin list sources
-- `POST /api/sources` admin create source
-- `PUT /api/sources/:id` admin update source
-- `DELETE /api/sources/:id` admin delete source
-- `POST /api/admin/crawl` admin trigger crawl
+### Frontend
+- `npm run dev` start Vite
+- `npm run build` create production build
+- `npm run preview` preview production build
+- `npm run lint` run ESLint
 
-**Notes**
-- Redis must be running for the crawler queue.
-- Vite dev server proxies `/api` to `http://localhost:4000`.
+## Authentication
 
-**Deployment Notes**
-- If the frontend and backend are deployed on different domains, set `client/.env` or your hosting provider env with `VITE_API_URL=https://your-backend-domain.com` before building the client.
-- Set backend `APP_URL` to the public frontend URL so verification links open the right site.
-- Set backend `CORS_ORIGIN` to the exact deployed frontend URL. Multiple origins can be comma-separated.
-- The frontend uses `BrowserRouter`, so static hosting also needs an SPA rewrite that serves `index.html` for app routes like `/login` or `/admin`.
-- For Vercel deployments, add a `vercel.json` rewrite so routes like `/login` and `/admin` resolve to `index.html` instead of Vercel's `404 NOT_FOUND` page.
-- Use Brevo's HTTP API for verification emails so the backend works on Render free without SMTP.
+- Login is handled through Google Sign-In.
+- The frontend sends the Google credential to `POST /api/auth/google`.
+- The backend verifies the Google ID token, creates or updates the user, then returns the app JWT.
+- `GET /api/auth/me` restores the session on refresh.
+- Admin access depends on the `role` field in the MongoDB user document.
+
+## Search Flow
+
+1. User enters a prompt on the home page.
+2. Frontend calls the search API.
+3. Backend normalizes the prompt with Gemini if available, otherwise falls back to local parsing.
+4. MongoDB returns matching jobs.
+5. Frontend renders role cards, details modal, and report summary.
+
+## Admin Flow
+
+### Sources control
+- Add or edit source records.
+- Filter sources by region, type, tag, and active state.
+- Pause or activate a source.
+- Export the source list.
+
+### Jobs monitor
+- Search fetched job records.
+- Review core metadata like location and remote mode.
+
+### Operations
+- Trigger a priority crawl.
+- Review operational status items.
+
+## API Overview
+
+### Auth
+- `POST /api/auth/google`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+
+### Search and stats
+- `GET /api/search`
+- `POST /api/search`
+- `GET /api/stats`
+
+### Sources
+- `GET /api/sources`
+- `POST /api/sources`
+- `PUT /api/sources/:id`
+- `DELETE /api/sources/:id`
+
+### Jobs and companies
+- `GET /api/jobs`
+- `GET /api/companies`
+
+### Admin crawl
+- `POST /api/admin/crawl`
+
+## Crawler Notes
+
+- Redis must be running for BullMQ.
+- The backend scheduler can enqueue crawls automatically.
+- The worker processes crawl jobs separately from the API server.
+- Source freshness and last-crawl timestamps are exposed through stats and admin views.
+
+## Frontend Notes
+
+- Theme is managed with `client/src/services/theme.jsx`.
+- Auth state is managed with `client/src/services/auth.jsx`.
+- The topbar, home page, login page, and admin page use SCSS modules by page/component.
+- GSAP is used for restrained entrance motion rather than heavy visual effects.
+
+## Deployment Notes
+
+- Set `VITE_API_URL` to the deployed backend origin before building the client.
+- Set backend `CORS_ORIGIN` to the deployed frontend origin.
+- Set backend `GOOGLE_CLIENT_ID` and frontend `VITE_GOOGLE_CLIENT_ID` to the same Google web client ID.
+- Because the frontend uses `BrowserRouter`, static hosting must rewrite app routes like `/login` and `/admin` to `index.html`.
+- Redis is required in production if you want crawl queue features.
+
+## Current Status
+
+The project currently ships with:
+
+- Minimal professional home UI
+- Google Sign-In based auth
+- Protected routes
+- Admin source management
+- Admin jobs monitor
+- Crawl trigger support
+- Daily crawl scheduling support
+
+For a simpler code walkthrough, see `explaintion.md`.

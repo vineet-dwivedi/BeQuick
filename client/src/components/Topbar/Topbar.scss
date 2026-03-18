@@ -1,105 +1,175 @@
 @use "../../styles/tokens" as *;
 
 .topbar {
-  position: relative;
-  z-index: 10;
-  display: flex;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: auto minmax(320px, 560px) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 14px 22px;
+  gap: 14px 18px;
+  padding: 14px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, rgba(255, 255, 255, 0.08));
   border-radius: $radius-lg;
-  @include glass(0.9);
-  box-shadow: var(--shadow-soft);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+}
+
+body[data-theme="alt"] .topbar {
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  min-width: 0;
+  max-width: 100%;
+
+  &__mark {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface-elevated) 90%, transparent);
+  }
 
   &__dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
     background: var(--accent);
-    box-shadow: 0 0 0 6px var(--accent-soft);
+  }
+
+  &__copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  strong {
+    color: var(--text-primary);
+    font-size: 0.98rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  small {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
   }
 }
 
 .nav {
   display: flex;
-  gap: 20px;
-  font-size: 0.92rem;
-  color: var(--text-muted);
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-elevated) 84%, transparent);
+  scrollbar-width: thin;
 
   a {
-    padding-bottom: 4px;
-    border-bottom: 1px solid transparent;
-    transition: color 0.2s ease, border-color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    font-weight: 700;
+    white-space: nowrap;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease;
   }
 
   a:hover,
   a.active,
   a[aria-current="page"] {
+    background: var(--surface);
     color: var(--text-primary);
-    border-color: var(--accent);
   }
 }
 
 .topbar__actions {
   display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+  max-width: 100%;
+  justify-self: end;
 }
 
+.topbar__actions .btn {
+  min-height: 40px;
+  padding: 8px 14px;
+}
+
+.topbar__status,
 .user-pill {
-  background: var(--chip-bg);
-  border: 1px solid var(--chip-border);
-  color: var(--text-muted);
+  min-height: 40px;
   padding: 8px 12px;
   border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-elevated) 84%, transparent);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1240px) {
   .topbar {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: auto 1fr;
+  }
+
+  .nav {
+    max-width: 100%;
   }
 
   .topbar__actions {
-    width: 100%;
-    flex-wrap: wrap;
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 1080px) {
+  .topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar__actions {
+    grid-column: auto;
+    justify-self: stretch;
     justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .nav {
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 8px;
   }
 }
 
 @media (max-width: 560px) {
   .topbar {
-    padding: 12px 16px;
-  }
-
-  .brand {
-    font-size: 1rem;
-  }
-
-  .topbar__actions .btn {
-    width: auto;
-  }
-}
-
-@media (max-width: 550px) {
-  .nav {
-    width: 100%;
-    gap: 12px;
+    padding: 14px;
   }
 
   .topbar__actions {
@@ -109,6 +179,7 @@
   }
 
   .topbar__actions .btn,
+  .topbar__status,
   .user-pill {
     width: 100%;
     justify-content: center;

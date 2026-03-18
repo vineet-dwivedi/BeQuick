@@ -1,36 +1,49 @@
 import { useLoginState } from "./hooks/useLoginState.js";
 
 export default function LoginPage() {
-  const { pageRef, signup, signin } = useLoginState();
+  const { pageRef, googleButtonRef, error, info, loading } = useLoginState();
 
   return (
     <div className="page page-login" ref={pageRef}>
       <section className="login-grid">
         <div className="login-panel">
+          <div className="login-panel__meta">
+            <span className="login-badge">For all tech roles</span>
+            <span className="login-badge login-badge--muted">Google verified access</span>
+          </div>
           <p className="eyebrow">Secure access</p>
-          <h1>Welcome to BeQuick Elite</h1>
+          <h1>Access the BeQuick command deck</h1>
           <p>
-            Create an account with your email and password, verify it from your inbox,
-            and unlock curated job intelligence with clean session-based access.
+            Sign in with Google to explore verified hiring intelligence across software,
+            data, AI, cloud, security, product, design, and every other tech lane the
+            platform tracks.
           </p>
           <div className="login-stats">
             <div>
-              <h3>1 Click</h3>
-              <p>Verification link activation</p>
+              <h3>1 click</h3>
+              <p>Google-verified sign-in</p>
             </div>
             <div>
-              <h3>24/7</h3>
-              <p>Live crawl coverage</p>
+              <h3>All roles</h3>
+              <p>One platform for every tech path</p>
             </div>
             <div>
-              <h3>6K+</h3>
-              <p>Roles tracked weekly</p>
+              <h3>Live feed</h3>
+              <p>Verified company signals</p>
             </div>
+          </div>
+          <div className="login-lanes">
+            <span>Engineering</span>
+            <span>Data</span>
+            <span>AI</span>
+            <span>Product</span>
+            <span>Design</span>
+            <span>Security</span>
           </div>
           <div className="login-note">
             <p>
-              Admins use the same login form and are routed to the admin panel automatically
-              based on their role.
+              Admins use the same Google login. If your account already has the admin role in
+              the database, you will be routed to the admin panel automatically.
             </p>
           </div>
         </div>
@@ -38,121 +51,37 @@ export default function LoginPage() {
         <div className="login-cards">
           <div className="login-card login-card--highlight">
             <div>
-              <p className="eyebrow">Create account</p>
-              <h2>Sign up with a real email</h2>
-              <p>We will send a verification link before your account can log in.</p>
+              <p className="eyebrow">Google Sign-In</p>
+              <h2>Continue with Google</h2>
+              <p>
+                Use the same Google account every time so your BeQuick profile, role, and
+                dashboard state stay linked correctly.
+              </p>
             </div>
 
-            <form
-              className="auth-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                signup.submit();
-              }}
-            >
-              <label className="form-field">
-                Full name
-                <input
-                  className="auth-input"
-                  type="text"
-                  value={signup.name}
-                  onChange={(event) => signup.setName(event.target.value)}
-                  placeholder="Vineet Dwivedi"
-                  autoComplete="name"
-                  required
-                />
-              </label>
-              <label className="form-field">
-                Email address
-                <input
-                  className="auth-input"
-                  type="email"
-                  value={signup.email}
-                  onChange={(event) => signup.setEmail(event.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  required
-                />
-              </label>
-              <label className="form-field">
-                Password
-                <input
-                  className="auth-input"
-                  type="password"
-                  value={signup.password}
-                  onChange={(event) => signup.setPassword(event.target.value)}
-                  placeholder="Create a password"
-                  autoComplete="new-password"
-                  required
-                />
-              </label>
-              {signup.error && <p className="error-text">{signup.error}</p>}
-              {signup.info && <p className="info-text">{signup.info}</p>}
-              <button className="btn btn-primary" type="submit" disabled={signup.loading}>
-                {signup.loading ? "Creating..." : "Create Account"}
-              </button>
-            </form>
+            <div className="google-auth-slot">
+              <div className="google-auth-slot__button" ref={googleButtonRef} />
+            </div>
+
+            {loading && <p className="info-text">Signing you in...</p>}
+            {error && <p className="error-text">{error}</p>}
+            {info && <p className="info-text">{info}</p>}
           </div>
 
           <div className="login-card">
             <div>
-              <p className="eyebrow">Login</p>
-              <h2>Sign in with your password</h2>
-              <p>Use your verified email and password to continue.</p>
+              <p className="eyebrow">Why this flow</p>
+              <h2>No OTP friction, cleaner entry</h2>
+              <p>
+                Google handles the identity step, and BeQuick creates or links your account on
+                the backend after verifying the Google ID token.
+              </p>
             </div>
-
-            <form
-              className="auth-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                signin.submit();
-              }}
-            >
-              <label className="form-field">
-                Email address
-                <input
-                  className="auth-input"
-                  type="email"
-                  value={signin.email}
-                  onChange={(event) => signin.setEmail(event.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  required
-                />
-              </label>
-              <label className="form-field">
-                Password
-                <input
-                  className="auth-input"
-                  type="password"
-                  value={signin.password}
-                  onChange={(event) => signin.setPassword(event.target.value)}
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                  required
-                />
-              </label>
-              {signin.error && <p className="error-text">{signin.error}</p>}
-              {signin.info && <p className="info-text">{signin.info}</p>}
-              <div className="auth-actions">
-                <button className="btn btn-primary" type="submit" disabled={signin.loading}>
-                  {signin.loading ? "Signing in..." : "Login"}
-                </button>
-                {signin.needsVerification && (
-                  <button
-                    className="btn btn-ghost"
-                    type="button"
-                    onClick={signin.resendVerification}
-                    disabled={signin.resendLoading}
-                  >
-                    {signin.resendLoading ? "Sending..." : "Resend Verification Link"}
-                  </button>
-                )}
-                <button className="btn btn-ghost" type="button" onClick={signin.reset}>
-                  Reset
-                </button>
-              </div>
-            </form>
+            <ul className="login-points">
+              <li>Faster sign-in with fewer moving parts on Render free.</li>
+              <li>Backend still issues your app JWT after verifying Google.</li>
+              <li>Existing admin/user roles stay controlled in MongoDB.</li>
+            </ul>
           </div>
         </div>
       </section>

@@ -7,12 +7,21 @@ export default function NotFoundPage() {
   return (
     <div className="page page-notfound">
       <section className="notfound">
+        <div className="notfound__meta">
+          <span>Elite routing</span>
+          <span>Missing page</span>
+        </div>
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
         <p>{message}</p>
-        <Link className="btn btn-primary" to="/">
-          {actionLabel}
-        </Link>
+        <div className="notfound__actions">
+          <Link className="btn btn-primary" to="/">
+            {actionLabel}
+          </Link>
+          <Link className="btn btn-ghost" to="/login">
+            Open login
+          </Link>
+        </div>
       </section>
     </div>
   );

@@ -4,8 +4,12 @@ import Topbar from "../../components/Topbar/Topbar.jsx";
 export default function MainLayout() {
   return (
     <div className="layout">
-      <Topbar />
-      <Outlet />
+      <div className="layout__shell">
+        <Topbar />
+        <main className="layout__content">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

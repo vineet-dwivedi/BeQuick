@@ -22,15 +22,9 @@ export default function AdminPage() {
     setJobQuery,
     jobsLoading,
     jobsError,
-    companies,
-    companyFilters,
-    setCompanyFilters,
-    companiesLoading,
-    companiesError,
     crawlLoading,
     loadSources,
     loadJobs,
-    loadCompanies,
     handleSourceSubmit,
     handleEditSource,
     handleDeleteSource,
@@ -62,7 +56,11 @@ export default function AdminPage() {
   return (
     <div className="page page-admin" ref={pageRef}>
       <section className="admin-hero">
-        <div>
+        <div className="admin-hero__copy">
+          <div className="admin-hero__meta">
+            <span>Elite control room</span>
+            <span>Live operations</span>
+          </div>
           <p className="eyebrow">Command center</p>
           <h1>Admin intelligence dashboard</h1>
           <p>
@@ -70,18 +68,24 @@ export default function AdminPage() {
             weekly data refresh cycles.
           </p>
         </div>
-        <div className="admin-actions">
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={handleRunCrawl}
-            disabled={crawlLoading}
-          >
-            {crawlLoading ? "Queueing..." : "Run priority crawl"}
-          </button>
-          <button className="btn btn-outline" type="button" onClick={handleExportSources}>
-            Export sources
-          </button>
+        <div className="admin-hero__panel">
+          <div className="admin-hero__pulse">
+            <strong>{stats?.jobs ?? "--"}</strong>
+            <span>Live roles under watch</span>
+          </div>
+          <div className="admin-actions">
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={handleRunCrawl}
+              disabled={crawlLoading}
+            >
+              {crawlLoading ? "Queueing..." : "Run priority crawl"}
+            </button>
+            <button className="btn btn-outline" type="button" onClick={handleExportSources}>
+              Export sources
+            </button>
+          </div>
         </div>
       </section>
 
@@ -203,7 +207,7 @@ export default function AdminPage() {
                 onChange={(event) =>
                   setSourceForm((prev) => ({ ...prev, tags: event.target.value }))
                 }
-                placeholder="frontend, hiring, graduate"
+                placeholder="engineering, data, product"
               />
             </div>
             <label className="form-checkbox">
@@ -368,73 +372,19 @@ export default function AdminPage() {
         <div className="admin-table">
           <div className="table-body">
             {jobs.map((job) => (
-              <div className="table-row" key={job._id}>
-                <div>
+              <div className="table-row table-row--job" key={job._id}>
+                <div className="table-row__content">
                   <h3>{job.title}</h3>
                   <p>{job.companyName || "Unknown company"}</p>
                 </div>
-                <span className="pill">{job.location || "Location n/a"}</span>
-                <span className="pill">{job.remoteType || "onsite"}</span>
+                <div className="table-row__meta">
+                  <span className="pill pill--location">{job.location || "Location n/a"}</span>
+                  <span className="pill pill--mode">{job.remoteType || "onsite"}</span>
+                </div>
               </div>
             ))}
             {!jobs.length && !jobsLoading && (
               <p className="info-text">No jobs found for this query.</p>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="admin-section">
-        <div className="admin-section__head">
-          <div>
-            <h2>Companies overview</h2>
-            <p>Quick view of companies indexed in the platform.</p>
-          </div>
-          <div className="admin-section__actions">
-            <input
-              className="auth-input"
-              type="text"
-              placeholder="Industry"
-              value={companyFilters.industry}
-              onChange={(event) =>
-                setCompanyFilters((prev) => ({ ...prev, industry: event.target.value }))
-              }
-            />
-            <input
-              className="auth-input"
-              type="text"
-              placeholder="Location"
-              value={companyFilters.location}
-              onChange={(event) =>
-                setCompanyFilters((prev) => ({ ...prev, location: event.target.value }))
-              }
-            />
-            <button
-              className="btn btn-outline"
-              type="button"
-              onClick={() => loadCompanies(companyFilters)}
-              disabled={companiesLoading}
-            >
-              {companiesLoading ? "Loading" : "Filter"}
-            </button>
-          </div>
-        </div>
-
-        {companiesError && <p className="error-text">{companiesError}</p>}
-        <div className="admin-table">
-          <div className="table-body">
-            {companies.map((company) => (
-              <div className="table-row" key={company._id}>
-                <div>
-                  <h3>{company.name}</h3>
-                  <p>{company.industry || "Industry n/a"}</p>
-                </div>
-                <span className="pill">{company.companyType || "other"}</span>
-                <span className="pill">{company.headquartersLocation || "Location n/a"}</span>
-              </div>
-            ))}
-            {!companies.length && !companiesLoading && (
-              <p className="info-text">No companies match the current filters.</p>
             )}
           </div>
         </div>

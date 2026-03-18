@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { fetchStats, searchJobs } from "../../../services/api.js";
 import { DEFAULT_PROMPT } from "../state/homeConstants.js";
+
+gsap.registerPlugin(ScrollTrigger);
+
+const shouldReduceMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export const useHomeState = () => {
   const pageRef = useRef(null);
@@ -71,30 +78,114 @@ export const useHomeState = () => {
   }, []);
 
   useEffect(() => {
+    if (shouldReduceMotion()) {
+      return undefined;
+    }
+
     const ctx = gsap.context(() => {
-      gsap.from(".hero__eyebrow", { y: 24, opacity: 0, duration: 0.6 });
-      gsap.from(".hero__title", { y: 30, opacity: 0, duration: 0.8, delay: 0.1 });
-      gsap.from(".hero__subtitle", { y: 20, opacity: 0, duration: 0.8, delay: 0.2 });
-      gsap.from(".hero__actions", { y: 24, opacity: 0, duration: 0.8, delay: 0.3 });
-      gsap.from(".hero__panel", { y: 28, opacity: 0, duration: 0.9, delay: 0.35 });
-      gsap.from(".feature-card", {
-        y: 24,
-        opacity: 0,
-        duration: 0.6,
-        stagger: 0.1,
-        delay: 0.5
+      const heroTimeline = gsap.timeline({
+        defaults: { duration: 0.76, ease: "power3.out" }
       });
-      gsap.from(".elite-swiper .swiper-slide", {
-        y: 26,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.12,
-        delay: 0.6
+
+      heroTimeline
+        .from(".js-hero-line", {
+          y: 28,
+          autoAlpha: 0,
+          stagger: 0.1
+        })
+        .from(
+          ".js-hero-card .js-stagger-item",
+          {
+            y: 18,
+            autoAlpha: 0,
+            duration: 0.48,
+            stagger: 0.06
+          },
+          "-=0.34"
+        )
+        .from(
+          ".js-hero-card",
+          {
+            y: 28,
+            autoAlpha: 0,
+            duration: 0.82,
+            stagger: 0.12
+          },
+          "-=0.46"
+        );
+
+      gsap.utils.toArray(".js-reveal").forEach((section) => {
+        const items = Array.from(section.querySelectorAll(".js-reveal-item"));
+
+        if (!items.length) {
+          return;
+        }
+
+        gsap.from(items, {
+          y: 24,
+          autoAlpha: 0,
+          duration: 0.72,
+          stagger: 0.08,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: section,
+            start: "top 82%",
+            once: true
+          }
+        });
       });
     }, pageRef);
 
     return () => ctx.revert();
   }, []);
+
+  useEffect(() => {
+    if (!results.length || shouldReduceMotion()) {
+      return undefined;
+    }
+
+    const ctx = gsap.context(() => {
+      const cards = gsap.utils
+        .toArray(".js-results .result-card")
+        .filter((card) => !card.dataset.animated);
+
+      if (!cards.length) {
+        return;
+      }
+
+      cards.forEach((card) => {
+        card.dataset.animated = "true";
+      });
+
+      gsap.from(cards, {
+        y: 26,
+        autoAlpha: 0,
+        duration: 0.52,
+        stagger: 0.06,
+        ease: "power3.out",
+        clearProps: "all"
+      });
+    }, pageRef);
+
+    return () => ctx.revert();
+  }, [results.length]);
+
+  useEffect(() => {
+    if (!(selectedJob || showReport) || shouldReduceMotion()) {
+      return undefined;
+    }
+
+    const ctx = gsap.context(() => {
+      gsap.from(".modal__card", {
+        y: 24,
+        autoAlpha: 0,
+        duration: 0.34,
+        ease: "power2.out"
+      });
+    }, pageRef);
+
+    return () => ctx.revert();
+  }, [selectedJob, showReport]);
 
   return {
     pageRef,

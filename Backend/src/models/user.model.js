@@ -17,22 +17,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  googleSub: {
+    type: String,
+    default: null
+  },
   role: {
     type: String,
     enum: ["admin", "user"],
     default: "user"
-  },
-  emailVerified: {
-    type: Boolean,
-    default: false
-  },
-  emailVerificationTokenHash: {
-    type: String,
-    default: null
-  },
-  emailVerificationExpiresAt: {
-    type: Date,
-    default: null
   },
   createdAt: {
     type: Date,

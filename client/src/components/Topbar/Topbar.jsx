@@ -11,16 +11,22 @@ export default function Topbar() {
   return (
     <header className="topbar">
       <Link className="brand" to="/">
-        <span className="brand__dot" />
-        BeQuick Elite
+        <span className="brand__mark" aria-hidden="true">
+          <span className="brand__dot" />
+        </span>
+        <span className="brand__copy">
+          <strong>BeQuick Elite</strong>
+          <small>For all tech roles</small>
+        </span>
       </Link>
       <nav className="nav">
         {isHome ? (
           <>
-            <a href="#how">How it works</a>
-            <a href="#signals">Signals</a>
-            <a href="#companies">Companies</a>
-            <a href="#insights">Insights</a>
+            <a href="#how">Approach</a>
+            <a href="#coverage">Coverage</a>
+            <a href="#signals">Market Notes</a>
+            <a href="#companies">Live roles</a>
+            <a href="#insights">Report</a>
           </>
         ) : (
           <>
@@ -30,9 +36,10 @@ export default function Topbar() {
         )}
       </nav>
       <div className="topbar__actions">
+        <span className="topbar__status">Professional hiring search</span>
         {user && <span className="user-pill">{user.email}</span>}
         <button className="btn btn-outline" type="button" onClick={toggleTheme}>
-          {theme === "default" ? "Light Theme" : "Dark Theme"}
+          {theme === "default" ? "Light mode" : "Dark mode"}
         </button>
         {user?.role === "admin" && (
           <NavLink className="btn btn-outline" to="/admin">
@@ -51,11 +58,11 @@ export default function Topbar() {
         )}
         {!user ? (
           <NavLink className="btn btn-primary" to="/login">
-            Get Access
+            Sign in
           </NavLink>
         ) : (
           <NavLink className="btn btn-primary" to="/">
-            Launch Dashboard
+            Open platform
           </NavLink>
         )}
       </div>

@@ -1,31 +1,16 @@
 import { Router } from "express";
 import {
-  login,
+  googleLogin,
   logout,
-  me,
-  register,
-  resendVerificationEmail,
-  verifyEmail
+  me
 } from "../controllers/auth.contoller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
 import { validateBody } from "../middlewares/validate.middleware.js";
-import {
-  loginSchema,
-  registerSchema,
-  resendVerificationSchema,
-  verifyEmailSchema
-} from "../validators/auth.schema.js";
+import { googleAuthSchema } from "../validators/auth.schema.js";
 
 const router = Router();
 
-router.post("/auth/register", validateBody(registerSchema), register);
-router.post("/auth/login", validateBody(loginSchema), login);
-router.post(
-  "/auth/resend-verification",
-  validateBody(resendVerificationSchema),
-  resendVerificationEmail
-);
-router.post("/auth/verify-email", validateBody(verifyEmailSchema), verifyEmail);
+router.post("/auth/google", validateBody(googleAuthSchema), googleLogin);
 router.post("/auth/logout", logout);
 router.get("/auth/me", requireAuth, me);
 

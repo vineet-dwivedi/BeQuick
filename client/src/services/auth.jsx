@@ -78,69 +78,23 @@ export function AuthProvider({ children }) {
     };
   }, [token, fetchMe]);
 
-  const register = useCallback(async ({ user: name, email, password }) => {
-    const normalizedName = String(name || "").trim();
-    const normalizedEmail = String(email || "").trim();
-    const normalizedPassword = String(password || "");
-
-    if (!normalizedName || !normalizedEmail || !normalizedPassword) {
-      return { ok: false, error: "Name, email, and password are required." };
-    }
-
-    try {
-      const response = await fetch(buildApiUrl("/api/auth/register"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user: normalizedName,
-          email: normalizedEmail,
-          password: normalizedPassword
-        })
-      });
-      const data = await readJson(response);
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to create account");
-      }
-
-      return {
-        ok: true,
-        message: data?.message || "Account created. Check your email to verify your account."
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        error: error?.message || "Failed to create account"
-      };
-    }
-  }, []);
-
-  const login = useCallback(
-    async ({ email, password }) => {
-      const normalizedEmail = String(email || "").trim();
-      const normalizedPassword = String(password || "");
-
-      if (!normalizedEmail || !normalizedPassword) {
-        return { ok: false, error: "Email and password are required." };
+  const loginWithGoogle = useCallback(
+    async (credential) => {
+      const normalizedCredential = String(credential || "").trim();
+      if (!normalizedCredential) {
+        return { ok: false, error: "Google credential is missing." };
       }
 
       try {
-        const response = await fetch(buildApiUrl("/api/auth/login"), {
+        const response = await fetch(buildApiUrl("/api/auth/google"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: normalizedEmail,
-            password: normalizedPassword
-          })
+          body: JSON.stringify({ credential: normalizedCredential })
         });
         const data = await readJson(response);
 
         if (!response.ok) {
-          return {
-            ok: false,
-            requiresVerification: Boolean(data?.requiresVerification),
-            error: data?.error || "Login failed"
-          };
+          throw new Error(data?.error || "Google login failed");
         }
 
         persistToken(data.token);
@@ -150,74 +104,12 @@ export function AuthProvider({ children }) {
       } catch (error) {
         return {
           ok: false,
-          error: error?.message || "Login failed"
+          error: error?.message || "Google login failed"
         };
       }
     },
     [persistToken]
   );
-
-  const resendVerification = useCallback(async (email) => {
-    const normalizedEmail = String(email || "").trim();
-
-    if (!normalizedEmail) {
-      return { ok: false, error: "Enter the email you used when signing up." };
-    }
-
-    try {
-      const response = await fetch(buildApiUrl("/api/auth/resend-verification"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail })
-      });
-      const data = await readJson(response);
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to resend verification email");
-      }
-
-      return {
-        ok: true,
-        message: data?.message || "Verification link sent."
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        error: error?.message || "Failed to resend verification email"
-      };
-    }
-  }, []);
-
-  const verifyEmail = useCallback(async (tokenToVerify) => {
-    const normalizedToken = String(tokenToVerify || "").trim();
-
-    if (!normalizedToken) {
-      return { ok: false, error: "Verification token is missing." };
-    }
-
-    try {
-      const response = await fetch(buildApiUrl("/api/auth/verify-email"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: normalizedToken })
-      });
-      const data = await readJson(response);
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Verification failed");
-      }
-
-      return {
-        ok: true,
-        message: data?.message || "Email verified. You can log in now."
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        error: error?.message || "Verification failed"
-      };
-    }
-  }, []);
 
   const logout = useCallback(async () => {
     try {
@@ -240,13 +132,10 @@ export function AuthProvider({ children }) {
       user,
       token,
       bootstrapped,
-      register,
-      login,
-      resendVerification,
-      verifyEmail,
+      loginWithGoogle,
       logout
     }),
-    [user, token, bootstrapped, register, login, resendVerification, verifyEmail, logout]
+    [user, token, bootstrapped, loginWithGoogle, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -4,7 +4,6 @@ import { fetchStats } from "../../../services/api.js";
 import {
   createSource,
   deleteSource,
-  fetchCompanies,
   fetchJobs,
   fetchSources,
   runPriorityCrawl,
@@ -13,7 +12,6 @@ import {
 import { useAuth } from "../../../services/auth.jsx";
 import {
   ACTIVITY_FEED,
-  DEFAULT_COMPANY_FILTERS,
   DEFAULT_SOURCE_FILTERS,
   EMPTY_SOURCE_FORM
 } from "../state/adminConstants.js";
@@ -38,11 +36,6 @@ export const useAdminState = () => {
   const [jobQuery, setJobQuery] = useState("");
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState("");
-
-  const [companies, setCompanies] = useState([]);
-  const [companyFilters, setCompanyFilters] = useState({ ...DEFAULT_COMPANY_FILTERS });
-  const [companiesLoading, setCompaniesLoading] = useState(false);
-  const [companiesError, setCompaniesError] = useState("");
 
   const [crawlLoading, setCrawlLoading] = useState(false);
 
@@ -108,29 +101,11 @@ export const useAdminState = () => {
     [jobQuery, token]
   );
 
-  const loadCompanies = useCallback(
-    async (overrideFilters) => {
-      setCompaniesLoading(true);
-      setCompaniesError("");
-      try {
-        const params = { ...companyFilters, ...overrideFilters };
-        const data = await fetchCompanies(token, params);
-        setCompanies(data.companies || []);
-      } catch (error) {
-        setCompaniesError(error.message || "Failed to load companies");
-      } finally {
-        setCompaniesLoading(false);
-      }
-    },
-    [companyFilters, token]
-  );
-
   useEffect(() => {
     loadStats();
     loadSources();
     loadJobs();
-    loadCompanies();
-  }, [loadCompanies, loadJobs, loadSources, loadStats]);
+  }, [loadJobs, loadSources, loadStats]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -288,15 +263,9 @@ export const useAdminState = () => {
     setJobQuery,
     jobsLoading,
     jobsError,
-    companies,
-    companyFilters,
-    setCompanyFilters,
-    companiesLoading,
-    companiesError,
     crawlLoading,
     loadSources,
     loadJobs,
-    loadCompanies,
     handleSourceSubmit,
     handleEditSource,
     handleDeleteSource,
