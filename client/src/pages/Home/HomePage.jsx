@@ -180,7 +180,7 @@ export default function HomePage() {
           <div className="home-hero__heading js-hero-line">
             <h1 className="home-hero__title">Software engineering jobs</h1>
             <p className="home-hero__subtitle">
-              Search by role or company and review live openings fast.
+              Search and review live openings fast.
             </p>
           </div>
 
@@ -586,20 +586,6 @@ export default function HomePage() {
               <div>
                 <h4>Last crawl</h4>
                 <p>{formatTimestamp(stats?.lastJobScrapedAt)}</p>
-              </div>
-            </div>
-            <div className="report__tips">
-              <h4>Suggested searches</h4>
-              <div className="report__tags">
-                {QUICK_SEARCHES.map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => applyPromptAndSearch(item.value)}
-                  >
-                    {item.label}
-                  </button>
-                ))}
               </div>
             </div>
           </div>
