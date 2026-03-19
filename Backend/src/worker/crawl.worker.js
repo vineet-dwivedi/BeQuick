@@ -8,6 +8,7 @@ import jobModel from "../models/job.model.js";
 import companyModel from "../models/company.model.js";
 import sourceModel from "../models/source.model.js";
 import { classifyJobWithGemini } from "../services/gemini.service.js";
+import { isSoftwareEngineeringJob } from "../utils/software-role.utils.js";
 
 dotenv.config();
 
@@ -134,6 +135,10 @@ async function processCompany(job) {
       } catch {
         // Keep fallback values if Gemini fails.
       }
+    }
+
+    if (!isSoftwareEngineeringJob(enriched)) {
+      continue;
     }
 
     await upsertJob(resolvedCompanyId, enriched);

@@ -22,6 +22,7 @@ export const useHomeState = () => {
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [emptyState, setEmptyState] = useState(null);
   const [selectedJob, setSelectedJob] = useState(null);
   const [showReport, setShowReport] = useState(false);
 
@@ -47,6 +48,7 @@ export const useHomeState = () => {
         setTotal(data.total || incoming.length);
         setPage(data.page || nextPage);
         setRelaxed(data.relaxed || null);
+        setEmptyState(data.emptyState || null);
       } catch (err) {
         setError(err.message || "Something went wrong");
       } finally {
@@ -200,6 +202,7 @@ export const useHomeState = () => {
     stats,
     isLoading,
     error,
+    emptyState,
     selectedJob,
     setSelectedJob,
     showReport,

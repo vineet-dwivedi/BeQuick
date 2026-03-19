@@ -2,6 +2,10 @@ import jobModel from "../models/job.model.js";
 import searchLogModel from "../models/searchlog.model.js";
 import companyModel from "../models/company.model.js";
 import { parsePromptWithGemini } from "../services/gemini.service.js";
+import {
+  combineMongoQueries,
+  getSoftwareEngineeringQuery
+} from "../utils/software-role.utils.js";
 
 // Very simple prompt parser (no AI yet).
 function extractFilters(prompt = "") {
@@ -49,17 +53,43 @@ function escapeRegex(value = "") {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function looksLikeSoftwareRoleSearch(prompt = "", filters = {}) {
+  if (filters.stack?.length || filters.experienceLevel || filters.location) {
+    return true;
+  }
+
+  return /\b(software|engineer|developer|frontend|front end|backend|back end|full stack|fullstack|react|node|express|mongo|devops|platform|mobile|ios|android|web|cloud|java|python|go|rust|intern|sre)\b/i.test(
+    prompt
+  );
+}
+
 function getPriorityCompanyNames() {
   const raw = process.env.PRIORITY_COMPANIES;
   if (!raw) {
     return [
       "Amazon",
+      "Deloitte",
+      "EY",
+      "KPMG",
+      "PwC",
+      "Google",
+      "Microsoft",
+      "Accenture",
+      "Paychex",
+      "HCLTech",
+      "JPMorgan Chase",
       "LinkedIn",
-      "BitGo",
+      "Cloudflare",
+      "Palantir",
+      "Canonical",
+      "Zscaler",
       "Smartsheet",
       "Speechify",
-      "Dun & Bradstreet",
+      "BitGo",
       "Level AI",
+      "Dun & Bradstreet",
+      "Appspace",
+      "Anaplan",
       "Peacock India"
     ];
   }
@@ -90,8 +120,14 @@ async function findCompanyMatches(promptText) {
   const companies = await companyModel.find({}, "name").lean();
   return companies.filter((company) => {
     const normalizedName = normalizeText(company.name);
-    if (!normalizedName || normalizedName.length < 3) return false;
-    return normalizedPrompt.includes(normalizedName);
+    if (!normalizedName) return false;
+
+    const pattern = new RegExp(`(^| )${escapeRegex(normalizedName)}($| )`, "i");
+    if (pattern.test(normalizedPrompt)) {
+      return true;
+    }
+
+    return normalizedPrompt.length >= 3 && normalizedName.startsWith(normalizedPrompt);
   });
 }
 
@@ -103,7 +139,28 @@ async function loadPriorityCompanies() {
     name: new RegExp(`^${escapeRegex(name)}$`, "i")
   }));
 
-  return companyModel.find({ $or: orFilters }, "name").lean();
+  const companies = await companyModel.find({ $or: orFilters }, "name").lean();
+  const byName = new Map(companies.map((company) => [normalizeText(company.name), company]));
+
+  return names
+    .map((name) => byName.get(normalizeText(name)))
+    .filter(Boolean);
+}
+
+function buildPriorityRankExpression(priorityCompanies = []) {
+  if (!priorityCompanies.length) {
+    return null;
+  }
+
+  return {
+    $switch: {
+      branches: priorityCompanies.map((company, index) => ({
+        case: { $eq: ["$companyId", company._id] },
+        then: index
+      })),
+      default: priorityCompanies.length
+    }
+  };
 }
 
 // Search jobs using a prompt.
@@ -114,7 +171,7 @@ export async function searchJobs(req, res) {
     const prompt = typeof bodyPrompt === "string" ? bodyPrompt : queryPrompt;
 
     const promptProvided = typeof prompt === "string" && prompt.trim().length > 0;
-    const finalPrompt = promptProvided ? prompt : "MERN fresher India";
+    const finalPrompt = promptProvided ? prompt : "software engineer";
 
     const includeRemote = parseBoolean(req.body?.includeRemote ?? req.query?.includeRemote);
     const rawLimit = req.body?.limit ?? req.query?.limit;
@@ -151,13 +208,44 @@ export async function searchJobs(req, res) {
       }
     }
     const query = {};
-    const [matchedCompanies, priorityCompanies] = await Promise.all([
-      allJobsQuery ? Promise.resolve([]) : findCompanyMatches(finalPrompt),
-      loadPriorityCompanies()
-    ]);
-    const priorityCompanyIds = new Set(
-      priorityCompanies.map((company) => company._id.toString())
-    );
+    const matchedCompanies = allJobsQuery ? [] : await findCompanyMatches(finalPrompt);
+    const companyOnlyPrompt =
+      !allJobsQuery && !looksLikeSoftwareRoleSearch(finalPrompt, filters);
+    const softwareOnlyQuery = getSoftwareEngineeringQuery();
+    const broadSearch = matchedCompanies.length === 0;
+    const priorityCompanies = broadSearch ? await loadPriorityCompanies() : [];
+
+    if (companyOnlyPrompt && matchedCompanies.length === 0) {
+      await searchLogModel.create({
+        prompt: finalPrompt,
+        filters: {
+          ...filters,
+          company: [finalPrompt.trim()]
+        }
+      });
+
+      return res.json({
+        prompt: finalPrompt,
+        filters: {
+          ...filters,
+          company: [finalPrompt.trim()]
+        },
+        matchedCompanies: [],
+        emptyState: {
+          type: "company",
+          companyNames: [finalPrompt.trim()],
+          message: `No jobs found for ${finalPrompt.trim()} for now.`
+        },
+        relaxed: null,
+        includeRemote,
+        allJobs: false,
+        page,
+        limit,
+        total: 0,
+        count: 0,
+        results: []
+      });
+    }
 
     // Convert filters into a MongoDB query.
     if (filters.stack) query.stack = { $in: filters.stack };
@@ -180,14 +268,64 @@ export async function searchJobs(req, res) {
     const runQuery = async (mongoQuery, options = {}) => {
       const skipValue = Number.isFinite(options.skip) ? options.skip : skip;
       const limitValue = Number.isFinite(options.limit) ? options.limit : limit;
+      const combinedQuery = combineMongoQueries(mongoQuery, softwareOnlyQuery);
+      const priorityRank = buildPriorityRankExpression(priorityCompanies);
 
-      return jobModel
-        .find(mongoQuery)
-        .populate("companyId", "name careerPage website")
-        .sort({ postedDate: -1 })
-        .skip(skipValue)
-        .limit(limitValue)
-        .lean();
+      if (!priorityRank) {
+        return jobModel
+          .find(combinedQuery)
+          .populate("companyId", "name careerPage website")
+          .sort({ postedDate: -1, scrapedAt: -1 })
+          .skip(skipValue)
+          .limit(limitValue)
+          .lean();
+      }
+
+      return jobModel.aggregate([
+        { $match: combinedQuery },
+        {
+          $addFields: {
+            companyPriorityRank: priorityRank
+          }
+        },
+        {
+          $sort: {
+            companyPriorityRank: 1,
+            postedDate: -1,
+            scrapedAt: -1,
+            _id: 1
+          }
+        },
+        { $skip: skipValue },
+        { $limit: limitValue },
+        {
+          $lookup: {
+            from: companyModel.collection.name,
+            localField: "companyId",
+            foreignField: "_id",
+            as: "company"
+          }
+        },
+        {
+          $unwind: {
+            path: "$company",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $addFields: {
+            companyName: { $ifNull: ["$company.name", "Company"] },
+            companyCareerPage: { $ifNull: ["$company.careerPage", ""] },
+            companyWebsite: { $ifNull: ["$company.website", ""] }
+          }
+        },
+        {
+          $project: {
+            company: 0,
+            companyPriorityRank: 0
+          }
+        }
+      ]);
     };
 
     // Fetch matching jobs with company info.
@@ -197,7 +335,7 @@ export async function searchJobs(req, res) {
     let finalQuery = { ...query };
 
     // If nothing matched, relax location first, then experience.
-    if (results.length === 0 && query.location && allowRelax) {
+    if (results.length === 0 && filters.location && allowRelax) {
       const relaxedQuery = { ...query };
       delete relaxedQuery.location;
       if (relaxedQuery.$or) delete relaxedQuery.$or;
@@ -214,55 +352,12 @@ export async function searchJobs(req, res) {
       finalQuery = relaxedQuery;
     }
 
-    if (results.length === 0 && priorityCompanies.length > 0 && !allJobsQuery) {
-      const priorityQuery = { companyId: { $in: priorityCompanies.map((c) => c._id) } };
-      results = await runQuery(priorityQuery);
-      if (results.length > 0) relaxedFilters.push("priorityCompanies");
-      finalQuery = priorityQuery;
-    }
-
     let enrichedResults = results.map((job) => ({
       ...job,
-      companyName: job.companyId?.name || "Company",
-      companyCareerPage: job.companyId?.careerPage || "",
-      companyWebsite: job.companyId?.website || ""
+      companyName: job.companyName || job.companyId?.name || "Company",
+      companyCareerPage: job.companyCareerPage || job.companyId?.careerPage || "",
+      companyWebsite: job.companyWebsite || job.companyId?.website || ""
     }));
-
-    if (priorityCompanyIds.size > 0 && page === 1 && !allJobsQuery) {
-      const priorityLimit = Math.min(limit, 10);
-      const priorityResults = await runQuery(
-        { companyId: { $in: priorityCompanies.map((company) => company._id) } },
-        { skip: 0, limit: priorityLimit }
-      );
-
-      const priorityEnriched = priorityResults.map((job) => ({
-        ...job,
-        companyName: job.companyId?.name || "Company",
-        companyCareerPage: job.companyId?.careerPage || "",
-        companyWebsite: job.companyId?.website || ""
-      }));
-
-      const seen = new Set();
-      const merged = [];
-
-      for (const job of [...priorityEnriched, ...enrichedResults]) {
-        const key = job._id?.toString?.() || job.jobUrl;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        merged.push(job);
-      }
-
-      enrichedResults = merged.slice(0, limit);
-    }
-
-    if (priorityCompanyIds.size > 0 && enrichedResults.length > 1 && !allJobsQuery) {
-      enrichedResults.sort((a, b) => {
-        const aPriority = priorityCompanyIds.has(a.companyId?._id?.toString?.());
-        const bPriority = priorityCompanyIds.has(b.companyId?._id?.toString?.());
-        if (aPriority === bPriority) return 0;
-        return aPriority ? -1 : 1;
-      });
-    }
 
     // Save the search for analytics.
     await searchLogModel.create({
@@ -270,11 +365,24 @@ export async function searchJobs(req, res) {
       filters
     });
 
-    const total = await jobModel.countDocuments(finalQuery);
+    const total = await jobModel.countDocuments(
+      combineMongoQueries(finalQuery, softwareOnlyQuery)
+    );
+    const matchedCompanyNames = matchedCompanies.map((company) => company.name);
+    const emptyState =
+      matchedCompanyNames.length > 0 && total === 0
+        ? {
+            type: "company",
+            companyNames: matchedCompanyNames,
+            message: `No jobs found for ${matchedCompanyNames.join(", ")} for now.`
+          }
+        : null;
 
     return res.json({
       prompt: finalPrompt,
       filters,
+      matchedCompanies: matchedCompanyNames,
+      emptyState,
       relaxed: relaxedFilters.length ? relaxedFilters : null,
       includeRemote,
       allJobs: allJobsQuery,

@@ -8,15 +8,14 @@ export default function LoginPage() {
       <section className="login-grid">
         <div className="login-panel">
           <div className="login-panel__meta">
-            <span className="login-badge">For all tech roles</span>
+            <span className="login-badge">Software jobs only</span>
             <span className="login-badge login-badge--muted">Google verified access</span>
           </div>
           <p className="eyebrow">Secure access</p>
           <h1>Access the BeQuick command deck</h1>
           <p className="login-panel__lead">
-            Sign in with Google to explore verified hiring intelligence across software,
-            data, AI, cloud, security, product, design, and every other tech lane the
-            platform tracks.
+            Sign in with Google to explore verified software engineering jobs from tracked
+            tech companies.
           </p>
           <div className="login-stats">
             <div>
@@ -24,21 +23,13 @@ export default function LoginPage() {
               <p>Google-verified sign-in</p>
             </div>
             <div>
-              <h3>All roles</h3>
-              <p>One platform for every tech path</p>
+              <h3>Software jobs</h3>
+              <p>Focused engineering search</p>
             </div>
             <div>
               <h3>Live feed</h3>
               <p>Verified company signals</p>
             </div>
-          </div>
-          <div className="login-lanes">
-            <span>Engineering</span>
-            <span>Data</span>
-            <span>AI</span>
-            <span>Product</span>
-            <span>Design</span>
-            <span>Security</span>
           </div>
           <div className="login-note">
             <p>

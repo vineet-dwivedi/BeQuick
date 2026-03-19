@@ -81,7 +81,7 @@ body[data-theme="alt"] .page-home {
 
 .search-card {
   display: grid;
-  gap: 18px;
+  gap: 14px;
   padding: 24px;
 }
 
@@ -104,6 +104,10 @@ body[data-theme="alt"] .page-home {
   color: var(--text-primary);
   font-size: 0.88rem;
   font-weight: 700;
+}
+
+.search-card__head--compact {
+  align-items: center;
 }
 
 .search-card__copy,
@@ -409,6 +413,68 @@ body[data-theme="alt"] .page-home {
   gap: 18px;
 }
 
+.featured-companies {
+  display: grid;
+  gap: 14px;
+}
+
+.featured-companies__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.featured-companies__header span,
+.report-panel__aside-copy {
+  margin: 0;
+  color: var(--home-muted);
+  font-size: 0.9rem;
+}
+
+.featured-companies__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.featured-company-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--home-line);
+  border-radius: 18px;
+  background: var(--home-panel);
+  box-shadow: var(--home-shadow);
+  color: var(--text-primary);
+  text-align: left;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.featured-company-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--home-line-strong);
+}
+
+.featured-company-card strong {
+  font-size: 1rem;
+}
+
+.featured-company-card__body,
+.featured-company-card__actions {
+  display: grid;
+  gap: 10px;
+}
+
+.featured-company-card__actions a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .result-card {
   display: grid;
   gap: 18px;
@@ -456,7 +522,6 @@ body[data-theme="alt"] .page-home {
   font-weight: 700;
 }
 
-.result-card__signal,
 .relaxed-note,
 .modal__header p {
   margin: 0;
@@ -686,6 +751,18 @@ body[data-theme="alt"] .page-home {
   .result-card__location {
     text-align: left;
   }
+
+  .load-more {
+    position: sticky;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 5;
+    padding-top: 6px;
+  }
+
+  .load-more .btn {
+    width: min(100%, 360px);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+  }
 }
 
 @media (max-width: 560px) {
@@ -723,7 +800,8 @@ body[data-theme="alt"] .page-home {
   .modal__meta span,
   .modal__stack span,
   .report__tags button,
-  .results-summary strong {
+  .results-summary strong,
+  .load-more .btn {
     width: 100%;
     justify-content: center;
   }

@@ -40,7 +40,14 @@ function detectAts(url) {
     const workdayHost =
       host.includes("myworkdayjobs.com") || host.includes("workdayjobs.com");
 
-    if (host === "boards.greenhouse.io" && parts.length > 0) {
+    if (host === "boards.greenhouse.io" && parts[0] === "embed" && parts[1] === "job_board") {
+      const company = parsed.searchParams.get("for");
+      if (company) {
+        return { type: "greenhouse", company };
+      }
+    }
+
+    if ((host === "boards.greenhouse.io" || host === "job-boards.greenhouse.io") && parts.length > 0) {
       return { type: "greenhouse", company: parts[0] };
     }
 
@@ -167,6 +174,8 @@ async function discoverAtsUrlFromPage(url) {
 
     const patterns = [
       /https?:\/\/boards\.greenhouse\.io\/[a-z0-9-]+/i,
+      /https?:\/\/boards\.greenhouse\.io\/embed\/job_board\?for=[a-z0-9-]+/i,
+      /https?:\/\/job-boards\.greenhouse\.io\/[a-z0-9-]+/i,
       /https?:\/\/jobs\.lever\.co\/[a-z0-9-]+/i,
       /https?:\/\/careers\.smartrecruiters\.com\/[a-z0-9-]+/i,
       /https?:\/\/[a-z0-9-]+\.wd\d+\.myworkdayjobs\.com\/[a-z0-9-_]+/i,

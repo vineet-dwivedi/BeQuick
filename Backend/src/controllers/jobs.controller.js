@@ -1,4 +1,8 @@
 import jobModel from "../models/job.model.js";
+import {
+  combineMongoQueries,
+  getSoftwareEngineeringQuery
+} from "../utils/software-role.utils.js";
 
 // Get a list of jobs. Optional filters via query params.
 export async function getJobs(req, res) {
@@ -20,10 +24,11 @@ export async function getJobs(req, res) {
     const limit = Math.min(Number(query.limit || 50), 200);
     const page = Math.max(Number(query.page || 1), 1);
     const skip = (page - 1) * limit;
+    const mongoQuery = combineMongoQueries(filters, getSoftwareEngineeringQuery());
 
     const [jobs, total] = await Promise.all([
-      jobModel.find(filters).sort({ postedDate: -1 }).skip(skip).limit(limit).lean(),
-      jobModel.countDocuments(filters)
+      jobModel.find(mongoQuery).sort({ postedDate: -1 }).skip(skip).limit(limit).lean(),
+      jobModel.countDocuments(mongoQuery)
     ]);
 
     return res.json({

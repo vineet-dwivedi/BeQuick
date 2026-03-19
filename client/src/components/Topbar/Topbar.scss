@@ -52,14 +52,6 @@ body[data-theme="alt"] .topbar {
     font-weight: 800;
     letter-spacing: 0.04em;
   }
-
-  small {
-    color: var(--text-muted);
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
 }
 
 .nav {
@@ -116,7 +108,6 @@ body[data-theme="alt"] .topbar {
   padding: 8px 14px;
 }
 
-.topbar__status,
 .user-pill {
   min-height: 40px;
   padding: 8px 12px;
@@ -178,7 +169,6 @@ body[data-theme="alt"] .topbar {
   }
 
   .topbar__actions .btn,
-  .topbar__status,
   .user-pill {
     width: 100%;
     justify-content: center;

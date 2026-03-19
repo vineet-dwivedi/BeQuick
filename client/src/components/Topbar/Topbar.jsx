@@ -16,16 +16,13 @@ export default function Topbar() {
         </span>
         <span className="brand__copy">
           <strong>BeQuick Elite</strong>
-          <small>For all tech roles</small>
         </span>
       </Link>
       <nav className="nav">
         {isHome ? (
           <>
-            <a href="#how">Approach</a>
-            <a href="#coverage">Coverage</a>
-            <a href="#signals">Market Notes</a>
-            <a href="#companies">Live roles</a>
+            <a href="#overview">Overview</a>
+            <a href="#companies">Jobs</a>
             <a href="#insights">Report</a>
           </>
         ) : (
@@ -36,7 +33,6 @@ export default function Topbar() {
         )}
       </nav>
       <div className="topbar__actions">
-        <span className="topbar__status">Professional hiring search</span>
         {user && <span className="user-pill">{user.email}</span>}
         <button className="btn btn-outline" type="button" onClick={toggleTheme}>
           {theme === "default" ? "Light mode" : "Dark mode"}

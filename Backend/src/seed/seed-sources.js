@@ -20,7 +20,7 @@ async function seedSources() {
       );
 
       await companyModel.updateOne(
-        { careerPage: source.careerPage },
+        { name: source.name },
         {
           $set: {
             name: source.name,

@@ -1,5 +1,9 @@
 import companyModel from "../models/company.model.js";
 import jobModel from "../models/job.model.js";
+import {
+  combineMongoQueries,
+  getSoftwareEngineeringQuery
+} from "../utils/software-role.utils.js";
 
 // Get a list of companies. Optional filters via query params.
 export async function getCompanies(req, res) {
@@ -35,7 +39,9 @@ export async function getCompanyById(req, res) {
 
     if (req.query.includeJobs === "true") {
       // Optional: include jobs for this company.
-      const jobs = await jobModel.find({ companyId: id }).sort({ postedDate: -1 });
+      const jobs = await jobModel
+        .find(combineMongoQueries({ companyId: id }, getSoftwareEngineeringQuery()))
+        .sort({ postedDate: -1 });
       return res.json({ company, jobs });
     }
 
