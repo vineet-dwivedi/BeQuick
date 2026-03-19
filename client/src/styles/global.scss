@@ -1,6 +1,6 @@
 @use "./tokens" as *;
 
-@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 html {
   scroll-behavior: smooth;
@@ -14,8 +14,12 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--font-body);
+  font-feature-settings: "cv11", "ss01";
+  text-rendering: optimizeLegibility;
   color: var(--text-primary);
   background:
+    radial-gradient(circle at top left, var(--glow-primary), transparent 28%),
+    radial-gradient(circle at top right, var(--glow-secondary), transparent 24%),
     linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg) 42%, var(--bg) 100%);
   overflow-x: clip;
   color-scheme: dark;
@@ -77,11 +81,11 @@ select {
 h1,
 h2 {
   font-family: var(--font-display);
-  letter-spacing: 0.04em;
-  line-height: 0.94;
-  text-transform: uppercase;
-  font-weight: 400;
-  opacity: 0.75;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+  text-transform: none;
+  font-weight: 800;
+  opacity: 1;
 }
 
 h3,
@@ -103,16 +107,20 @@ h6 {
 
 .page {
   width: 100%;
-  padding: 28px 0 80px;
+  padding: 18px 0 60px;
   overflow-x: clip;
 }
 
 .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
   margin: 0;
   color: var(--accent);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -120,10 +128,11 @@ h6 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  padding: 10px 16px;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 13px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 10px;
   font-weight: 700;
   cursor: pointer;
   max-width: 100%;
@@ -178,6 +187,18 @@ h6 {
 
 .btn.full {
   width: 100%;
+}
+
+.ui-icon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
+.link-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .error-text {
@@ -250,7 +271,7 @@ h6 {
 
 @media (max-width: 720px) {
   .page {
-    padding: 22px 0 72px;
+    padding: 16px 0 56px;
   }
 }
 
@@ -262,7 +283,7 @@ h6 {
 
 @media (max-width: 550px) {
   .page {
-    padding: 18px 0 64px;
+    padding: 14px 0 52px;
   }
 
   .form-split {

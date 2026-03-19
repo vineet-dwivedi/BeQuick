@@ -1,4 +1,30 @@
 import { useLoginState } from "./hooks/useLoginState.js";
+import {
+  ArrowUpRightIcon,
+  BriefcaseIcon,
+  KeyIcon,
+  LayersIcon,
+  ShieldIcon,
+  SparkIcon
+} from "../../components/Icons/AppIcons.jsx";
+
+const LOGIN_POINTS = [
+  {
+    icon: ShieldIcon,
+    title: "Verified access",
+    detail: "Google sign-in only."
+  },
+  {
+    icon: BriefcaseIcon,
+    title: "Software jobs",
+    detail: "Focused role search."
+  },
+  {
+    icon: LayersIcon,
+    title: "Admin ready",
+    detail: "Same login, smart routing."
+  }
+];
 
 export default function LoginPage() {
   const { pageRef, googleButtonRef, error, info, loading } = useLoginState();
@@ -7,47 +33,46 @@ export default function LoginPage() {
     <div className="page page-login" ref={pageRef}>
       <section className="login-grid">
         <div className="login-panel">
-          <div className="login-panel__meta">
-            <span className="login-badge">Software jobs only</span>
-            <span className="login-badge login-badge--muted">Google verified access</span>
-          </div>
-          <p className="eyebrow">Secure access</p>
-          <h1>Access the BeQuick command deck</h1>
-          <p className="login-panel__lead">
-            Sign in with Google to explore verified software engineering jobs from tracked
-            tech companies.
+          <p className="eyebrow">
+            <SparkIcon size={14} />
+            <span>Secure access</span>
           </p>
-          <div className="login-stats">
-            <div>
-              <h3>1 click</h3>
-              <p>Google-verified sign-in</p>
-            </div>
-            <div>
-              <h3>Software jobs</h3>
-              <p>Focused engineering search</p>
-            </div>
-            <div>
-              <h3>Live feed</h3>
-              <p>Verified company signals</p>
-            </div>
+          <h1>Sign in to BeQuick</h1>
+          <p className="login-panel__lead">Verified software engineering jobs in one place.</p>
+          <div className="login-pills">
+            <span className="login-badge">
+              <BriefcaseIcon size={14} />
+              Software jobs
+            </span>
+            <span className="login-badge login-badge--muted">
+              <ShieldIcon size={14} />
+              Google only
+            </span>
           </div>
-          <div className="login-note">
-            <p>
-              Admins use the same Google login. If your account already has the admin role in
-              the database, you will be routed to the admin panel automatically.
-            </p>
+          <div className="login-points-grid">
+            {LOGIN_POINTS.map((item) => (
+              <article key={item.title} className="login-mini-card">
+                <span className="login-mini-card__icon">
+                  <item.icon size={16} />
+                </span>
+                <div>
+                  <h3>{item.title}</h3>
+                  <p>{item.detail}</p>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
 
         <div className="login-cards">
           <div className="login-card login-card--highlight">
             <div className="login-card__header">
-              <p className="eyebrow">Google Sign-In</p>
-              <h2>Continue with Google</h2>
-              <p>
-                Use the same Google account every time so your BeQuick profile, role, and
-                dashboard state stay linked correctly.
+              <p className="eyebrow">
+                <KeyIcon size={14} />
+                <span>Google sign-in</span>
               </p>
+              <h2>Continue with Google</h2>
+              <p>Use the same account every time.</p>
             </div>
 
             <div className="google-auth-slot">
@@ -67,18 +92,26 @@ export default function LoginPage() {
 
           <div className="login-card">
             <div className="login-card__header">
-              <p className="eyebrow">Why this flow</p>
-              <h2>No OTP friction, cleaner entry</h2>
-              <p>
-                Google handles the identity step, and BeQuick creates or links your account on
-                the backend after verifying the Google ID token.
+              <p className="eyebrow">
+                <LayersIcon size={14} />
+                <span>Flow</span>
               </p>
+              <h2>Simple and direct</h2>
             </div>
-            <ul className="login-points">
-              <li>Faster sign-in with fewer moving parts on Render free.</li>
-              <li>Backend still issues your app JWT after verifying Google.</li>
-              <li>Existing admin/user roles stay controlled in MongoDB.</li>
-            </ul>
+            <div className="login-steps">
+              <div className="login-step">
+                <ShieldIcon size={16} />
+                <span>Google verifies identity.</span>
+              </div>
+              <div className="login-step">
+                <LayersIcon size={16} />
+                <span>BeQuick links your account.</span>
+              </div>
+              <div className="login-step">
+                <ArrowUpRightIcon size={16} />
+                <span>Admins go straight to admin.</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>

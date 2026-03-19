@@ -1,18 +1,27 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../services/auth.jsx";
 import { useTheme } from "../../services/theme.jsx";
+import {
+  BriefcaseIcon,
+  CompassIcon,
+  LayersIcon,
+  MoonIcon,
+  SunIcon
+} from "../Icons/AppIcons.jsx";
 
 export default function Topbar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const brandIconSrc =
+    theme === "default" ? "/favicon-dark.svg?v=1" : "/favicon-light.svg?v=1";
 
   return (
     <header className="topbar">
       <Link className="brand" to="/">
         <span className="brand__mark" aria-hidden="true">
-          <img className="brand__icon" src="/favicon.svg?v=5" alt="" />
+          <img className="brand__icon" src={brandIconSrc} alt="" />
         </span>
         <span className="brand__copy">
           <strong>BeQuick Elite</strong>
@@ -21,9 +30,18 @@ export default function Topbar() {
       <nav className="nav">
         {isHome ? (
           <>
-            <a href="#overview">Overview</a>
-            <a href="#companies">Jobs</a>
-            <a href="#insights">Report</a>
+            <a href="#overview">
+              <CompassIcon size={15} />
+              <span>Overview</span>
+            </a>
+            <a href="#companies">
+              <BriefcaseIcon size={15} />
+              <span>Jobs</span>
+            </a>
+            <a href="#insights">
+              <LayersIcon size={15} />
+              <span>Report</span>
+            </a>
           </>
         ) : (
           <>
@@ -35,7 +53,8 @@ export default function Topbar() {
       <div className="topbar__actions">
         {user && <span className="user-pill">{user.email}</span>}
         <button className="btn btn-outline" type="button" onClick={toggleTheme}>
-          {theme === "default" ? "Light mode" : "Dark mode"}
+          {theme === "default" ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+          <span>{theme === "default" ? "Light" : "Dark"}</span>
         </button>
         {user?.role === "admin" && (
           <NavLink className="btn btn-outline" to="/admin">

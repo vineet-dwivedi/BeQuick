@@ -2,6 +2,16 @@ import { useMemo } from "react";
 import { useHomeState } from "./hooks/useHomeState.js";
 import { DEFAULT_PROMPT } from "./state/homeConstants.js";
 import {
+  ArrowUpRightIcon,
+  BriefcaseIcon,
+  BuildingIcon,
+  GlobeIcon,
+  LayersIcon,
+  MapPinIcon,
+  SearchIcon,
+  SparkIcon
+} from "../../components/Icons/AppIcons.jsx";
+import {
   formatTimestamp,
   getCompanyInitials,
   getCompanyLogoUrl,
@@ -115,15 +125,18 @@ export default function HomePage() {
     () => [
       {
         value: stats?.sources ?? "--",
-        label: "Tech sources"
+        label: "Sources",
+        icon: GlobeIcon
       },
       {
         value: stats?.jobs ?? "--",
-        label: "Software jobs"
+        label: "Jobs",
+        icon: BriefcaseIcon
       },
       {
         value: stats?.companies ?? "--",
-        label: "Tracked companies"
+        label: "Companies",
+        icon: BuildingIcon
       }
     ],
     [stats]
@@ -166,7 +179,9 @@ export default function HomePage() {
         <div className="home-hero__main">
           <div className="home-hero__heading js-hero-line">
             <h1 className="home-hero__title">Software engineering jobs</h1>
-            <p className="home-hero__subtitle">Search by role or company and review live openings fast.</p>
+            <p className="home-hero__subtitle">
+              Search by role or company and review live openings fast.
+            </p>
           </div>
 
           <form
@@ -177,7 +192,10 @@ export default function HomePage() {
             }}
           >
             <div className="search-card__head search-card__head--compact">
-              <p className="search-card__label">Search roles or companies</p>
+              <p className="search-card__label">
+                <SearchIcon size={16} />
+                <span>Search roles or companies</span>
+              </p>
               <label className="search-toggle">
                 <input
                   type="checkbox"
@@ -189,15 +207,19 @@ export default function HomePage() {
             </div>
 
             <div className="search-card__row">
-              <input
-                id="home-search"
-                type="text"
-                value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
-                placeholder="software engineer or company name"
-              />
+              <div className="search-card__field">
+                <SearchIcon size={16} />
+                <input
+                  id="home-search"
+                  type="text"
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  placeholder="software engineer or company name"
+                />
+              </div>
               <button className="btn btn-primary" type="submit" disabled={isLoading}>
-                {isLoading ? "Searching..." : "Search jobs"}
+                <SearchIcon size={16} />
+                <span>{isLoading ? "Searching..." : "Search"}</span>
               </button>
             </div>
           </form>
@@ -208,7 +230,10 @@ export default function HomePage() {
         <aside className="home-hero__panel js-hero-card">
           <div className="panel-head">
             <div>
-              <p className="eyebrow">Live Board</p>
+              <p className="eyebrow">
+                <SparkIcon size={14} />
+                <span>Live board</span>
+              </p>
               <h2>Market snapshot</h2>
             </div>
             <span className="panel-badge">
@@ -219,8 +244,11 @@ export default function HomePage() {
           <div className="metric-grid">
             {commandMetrics.map((item) => (
               <article className="metric-card js-stagger-item" key={item.label}>
+                <div className="metric-card__head">
+                  <item.icon size={16} />
+                  <span>{item.label}</span>
+                </div>
                 <strong>{item.value}</strong>
-                <span>{item.label}</span>
               </article>
             ))}
           </div>
@@ -236,10 +264,12 @@ export default function HomePage() {
 
           <div className="panel-actions">
             <a className="btn btn-ghost" href="#companies">
-              View jobs
+              <BriefcaseIcon size={16} />
+              <span>Jobs</span>
             </a>
             <button type="button" className="btn btn-primary" onClick={() => setShowReport(true)}>
-              Open report
+              <LayersIcon size={16} />
+              <span>Report</span>
             </button>
           </div>
         </aside>
@@ -248,7 +278,10 @@ export default function HomePage() {
       <section className="home-section home-section--results js-reveal" id="companies">
         <div className="section-heading section-heading--split js-reveal-item">
           <div>
-            <p className="eyebrow">Live Roles</p>
+            <p className="eyebrow">
+              <BriefcaseIcon size={14} />
+              <span>Live roles</span>
+            </p>
             <h2>Software jobs matched to your search</h2>
             <p>Fresh openings from tracked companies.</p>
           </div>
@@ -262,20 +295,38 @@ export default function HomePage() {
 
         <div className="featured-companies js-reveal-item">
           <div className="featured-companies__header">
-            <p className="eyebrow">Big Companies</p>
+            <p className="eyebrow">
+              <BuildingIcon size={14} />
+              <span>Big companies</span>
+            </p>
             <span>Website and careers links</span>
           </div>
           <div className="featured-companies__grid">
             {FEATURED_BIG_COMPANIES.map((company) => (
               <article key={company.label} className="featured-company-card">
                 <div className="featured-company-card__body">
+                  <span className="featured-company-card__icon">
+                    <BuildingIcon size={16} />
+                  </span>
                   <strong>{company.label}</strong>
                 </div>
                 <div className="featured-company-card__actions">
-                  <a href={company.website} target="_blank" rel="noreferrer">
+                  <a
+                    className="link-with-icon"
+                    href={company.website}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <GlobeIcon size={15} />
                     Website
                   </a>
-                  <a href={company.careers} target="_blank" rel="noreferrer">
+                  <a
+                    className="link-with-icon"
+                    href={company.careers}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <BriefcaseIcon size={15} />
                     Careers
                   </a>
                 </div>
@@ -293,7 +344,7 @@ export default function HomePage() {
               const initials = getCompanyInitials(item.companyName || "Company");
 
               return (
-                <article className="result-card" key={item._id || index}>
+                <article className="result-card" key={item._id || item.jobUrl}>
                   <div className="result-card__header">
                     <div className="result-card__identity">
                       <div
@@ -326,6 +377,7 @@ export default function HomePage() {
                     </div>
 
                     <span className="result-card__location">
+                      <MapPinIcon size={15} />
                       {item.location || "Location not listed"}
                     </span>
                   </div>
@@ -345,18 +397,31 @@ export default function HomePage() {
 
                   <div className="result-card__links">
                     {item.companyWebsite && (
-                      <a href={item.companyWebsite} target="_blank" rel="noreferrer">
+                      <a
+                        className="link-with-icon"
+                        href={item.companyWebsite}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <GlobeIcon size={15} />
                         Company
                       </a>
                     )}
                     {item.companyCareerPage && (
-                      <a href={item.companyCareerPage} target="_blank" rel="noreferrer">
+                      <a
+                        className="link-with-icon"
+                        href={item.companyCareerPage}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <BriefcaseIcon size={15} />
                         Careers
                       </a>
                     )}
                     {item.jobUrl && (
-                      <a href={item.jobUrl} target="_blank" rel="noreferrer">
-                        Job link
+                      <a className="link-with-icon" href={item.jobUrl} target="_blank" rel="noreferrer">
+                        <ArrowUpRightIcon size={15} />
+                        Job
                       </a>
                     )}
                   </div>
@@ -367,7 +432,8 @@ export default function HomePage() {
                       className="btn btn-ghost"
                       onClick={() => setSelectedJob(item)}
                     >
-                      Open details
+                      <ArrowUpRightIcon size={15} />
+                      <span>Details</span>
                     </button>
                   </div>
                 </article>
@@ -401,7 +467,8 @@ export default function HomePage() {
               disabled={isLoading}
               onClick={() => fetchSearchResults(page + 1, true)}
             >
-              {isLoading ? "Loading..." : "Load more jobs"}
+              <ArrowUpRightIcon size={15} />
+              <span>{isLoading ? "Loading..." : "Load more"}</span>
             </button>
           </div>
         )}
@@ -410,15 +477,21 @@ export default function HomePage() {
       <section className="home-section js-reveal" id="insights">
         <div className="report-panel">
           <div className="report-panel__main js-reveal-item">
-            <p className="eyebrow">Report</p>
+            <p className="eyebrow">
+              <LayersIcon size={14} />
+              <span>Report</span>
+            </p>
             <h2>Quick snapshot</h2>
             <p>Counts, companies, and last refresh in one place.</p>
 
             <div className="report-panel__metrics">
               {commandMetrics.map((item) => (
                 <article className="metric-card" key={item.label}>
+                  <div className="metric-card__head">
+                    <item.icon size={16} />
+                    <span>{item.label}</span>
+                  </div>
                   <strong>{item.value}</strong>
-                  <span>{item.label}</span>
                 </article>
               ))}
             </div>
@@ -432,7 +505,8 @@ export default function HomePage() {
               className="btn btn-primary full"
               onClick={() => setShowReport(true)}
             >
-              Open report summary
+              <LayersIcon size={16} />
+              <span>Open report</span>
             </button>
           </aside>
         </div>
