@@ -279,6 +279,11 @@ The current UI direction is:
 - `GOOGLE_CLIENT_ID`
 - `REDIS_URL`
 
+For deployment, set `CORS_ORIGIN` to every frontend origin that should call the API, for example:
+- `http://localhost:5173`
+- `https://bequick-ten.vercel.app`
+- `https://*.vercel.app`
+
 Optional:
 - `JWT_EXPIRES_IN`
 - `GEMINI_API_KEY`
@@ -291,6 +296,8 @@ Optional:
 ### Frontend
 - `VITE_API_URL`
 - `VITE_GOOGLE_CLIENT_ID`
+
+For production, `VITE_API_URL` must point to the public backend URL, not localhost.
 
 ## 18. Scripts
 

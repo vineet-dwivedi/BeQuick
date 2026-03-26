@@ -1,33 +1,62 @@
 import { buildApiUrl } from "./apiBase.js";
 
-export async function searchJobs({ prompt, includeRemote, page, limit }) {
-  const response = await fetch(buildApiUrl("/api/search"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      prompt,
-      includeRemote,
-      page,
-      limit
-    })
-  });
+async function readJson(response) {
+  const text = await response.text();
+  if (!text) return {};
 
-  const data = await response.json();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {};
+  }
+}
 
-  if (!response.ok) {
-    throw new Error(data?.error || "Search failed");
+function normalizeNetworkError(error) {
+  if (error?.message === "Failed to fetch") {
+    return new Error(
+      "Unable to reach the API. Check that VITE_API_URL points to the deployed backend and that backend CORS_ORIGIN allows this frontend origin."
+    );
   }
 
-  return data;
+  return error instanceof Error ? error : new Error("Request failed");
+}
+
+export async function searchJobs({ prompt, includeRemote, page, limit }) {
+  try {
+    const response = await fetch(buildApiUrl("/api/search"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt,
+        includeRemote,
+        page,
+        limit
+      })
+    });
+
+    const data = await readJson(response);
+
+    if (!response.ok) {
+      throw new Error(data?.error || "Search failed");
+    }
+
+    return data;
+  } catch (error) {
+    throw normalizeNetworkError(error);
+  }
 }
 
 export async function fetchStats() {
-  const response = await fetch(buildApiUrl("/api/stats"));
-  const data = await response.json();
+  try {
+    const response = await fetch(buildApiUrl("/api/stats"));
+    const data = await readJson(response);
 
-  if (!response.ok) {
-    throw new Error(data?.error || "Failed to load stats");
+    if (!response.ok) {
+      throw new Error(data?.error || "Failed to load stats");
+    }
+
+    return data;
+  } catch (error) {
+    throw normalizeNetworkError(error);
   }
-
-  return data;
 }

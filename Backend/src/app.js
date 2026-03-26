@@ -13,15 +13,60 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
 
-const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
+const DEFAULT_ALLOWED_ORIGINS = new Set(["http://localhost:5173", "http://127.0.0.1:5173"]);
+
+const configuredAllowedOrigins = String(process.env.CORS_ORIGIN || "")
   .split(",")
-  .map((value) => value.trim());
+  .map((value) => value.trim())
+  .filter(Boolean);
+
+const wildcardToRegExp = (value) =>
+  new RegExp(
+    `^${value
+      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*/g, ".*")}$`,
+    "i"
+  );
+
+const exactAllowedOrigins = new Set(DEFAULT_ALLOWED_ORIGINS);
+const wildcardAllowedOrigins = [];
+
+configuredAllowedOrigins.forEach((origin) => {
+  if (origin.includes("*")) {
+    wildcardAllowedOrigins.push(wildcardToRegExp(origin));
+    return;
+  }
+
+  exactAllowedOrigins.add(origin);
+});
+
+const allowAnyOrigin = configuredAllowedOrigins.length === 0;
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) {
+    return true;
+  }
+
+  if (allowAnyOrigin || exactAllowedOrigins.has(origin)) {
+    return true;
+  }
+
+  return wildcardAllowedOrigins.some((pattern) => pattern.test(origin));
+};
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (isAllowedOrigin(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true
+};
 
 app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true
-  })
+  cors(corsOptions)
 );
 
 app.use(requestLogger);

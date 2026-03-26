@@ -80,7 +80,7 @@ Create env files for both apps:
 ```env
 MONGO_URI=
 JWT_SECRET=
-CORS_ORIGIN=http://localhost:5173
+CORS_ORIGIN=http://localhost:5173,https://bequick-ten.vercel.app,https://*.vercel.app
 GOOGLE_CLIENT_ID=
 REDIS_URL=
 ```
@@ -220,8 +220,10 @@ npm run dev
 ## Deployment Notes
 
 - Set `VITE_API_URL` to the deployed backend origin before building the client.
-- Set backend `CORS_ORIGIN` to the deployed frontend origin.
+- Set backend `CORS_ORIGIN` to a comma-separated list that includes both local dev and deployed frontend origins.
+- This backend accepts wildcard origins such as `https://*.vercel.app` when they are explicitly listed in `CORS_ORIGIN`.
 - Set backend `GOOGLE_CLIENT_ID` and frontend `VITE_GOOGLE_CLIENT_ID` to the same Google web client ID.
+- The frontend sends `Cross-Origin-Opener-Policy: same-origin-allow-popups` so Google Sign-In popups can communicate cleanly after deployment.
 - Because the frontend uses `BrowserRouter`, static hosting must rewrite app routes like `/login` and `/admin` to `index.html`.
 - Redis is required in production if you want crawl queue features.
 
